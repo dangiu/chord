@@ -1,0 +1,18 @@
+.classpath
+.project
+.settings/
+MessageCenter.log4j.properties
+batch/
+data/
+docs/
+freezedried_data/
+icons/
+installer/
+integration/
+launchers/
+lib/
+license.txt
+model_description.txt
+repast-licenses/
+
+# REMOVE EVERYTHING FOR THE FINAL PUSH SO THAT IMPORT CAN BE DONE EASILY
