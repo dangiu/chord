@@ -14,5 +14,6 @@ lib/
 license.txt
 model_description.txt
 repast-licenses/
+bin/
 
 # REMOVE EVERYTHING FOR THE FINAL PUSH SO THAT IMPORT CAN BE DONE EASILY
