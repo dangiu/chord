@@ -1,9 +1,11 @@
 package messages;
 
+import java.util.UUID;
+
 public class SuccessorMessage extends Message {
 	
-	public SuccessorMessage(int senderId) {
-		super(senderId, Message.MessageType.SUCCESSOR);
+	public SuccessorMessage(UUID queryId) {
+		super(queryId, Message.MessageType.SUCCESSOR);
 	}
 	
 }

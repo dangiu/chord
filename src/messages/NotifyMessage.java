@@ -1,11 +1,13 @@
 package messages;
 
+import java.util.UUID;
+
 public class NotifyMessage extends Message {
 	
 	private int id;
 
-	public NotifyMessage(int senderId, int id) {
-		super(senderId, Message.MessageType.NOTIFY);
+	public NotifyMessage(UUID queryId, int id) {
+		super(queryId, Message.MessageType.NOTIFY);
 		this.id = id;
 	}
 	

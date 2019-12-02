@@ -1,11 +1,13 @@
 package messages;
 
+import java.util.UUID;
+
 public class FindSuccessorMessage extends Message {
 
 	private int targetId;
 	
-	public FindSuccessorMessage(int senderId, int targetId) {
-		super(senderId, Message.MessageType.FIND_SUCCESSOR);
+	public FindSuccessorMessage(UUID queryId, int targetId) {
+		super(queryId, Message.MessageType.FIND_SUCCESSOR);
 		this.targetId = targetId;
 	}
 	
