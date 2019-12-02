@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import messages.Message;
 import repast.simphony.random.RandomHelper;
 
 public class Node {
@@ -98,7 +99,7 @@ public class Node {
 		
 	}
 	
-	private void resumeJoin(int sId) {
+	private void resumeJoin(int fsId) {
 		
 	}
 	

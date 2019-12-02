@@ -1,4 +1,4 @@
-package chord;
+package messages;
 
 import java.util.UUID;
 
@@ -10,6 +10,8 @@ public abstract class Message {
 		CLOSEST_PRECEDING_FINGER_REPLY,
 		FIND_SUCCESSOR,
 		FIND_SUCCESSOR_REPLY,
+		FIND_PREDECESSOR,
+		FIND_PREDECESSOR_REPLY,
 		PREDECESSOR,
 		PREDECESSOR_REPLY,
 		NOTIFY
