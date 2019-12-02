@@ -1,11 +1,13 @@
 package messages;
 
+import java.util.UUID;
+
 public class ClosestPrecedingFingerMessage extends Message {
 	
 	private int targetId;
 
-	public ClosestPrecedingFingerMessage(int senderId, int targetId) {
-		super(senderId, Message.MessageType.CLOSEST_PRECEDING_FINGER);
+	public ClosestPrecedingFingerMessage(UUID queryId, int targetId) {
+		super(queryId, Message.MessageType.CLOSEST_PRECEDING_FINGER);
 		this.targetId = targetId;
 	}
 	

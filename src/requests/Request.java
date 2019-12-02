@@ -3,7 +3,7 @@ package requests;
 import java.util.UUID;
 
 public abstract class Request {
-	enum RequestType {
+	public enum RequestType {
 		FIND_SUCCESSOR,
 		FIND_PREDECESSOR,
 		JOIN,

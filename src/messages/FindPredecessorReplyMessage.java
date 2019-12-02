@@ -1,11 +1,13 @@
 package messages;
 
+import java.util.UUID;
+
 public class FindPredecessorReplyMessage extends Message {
 
 	private int fpId;
 	
-	public FindPredecessorReplyMessage(int senderId, int fpId) {
-		super(senderId, Message.MessageType.FIND_PREDECESSOR_REPLY);
+	public FindPredecessorReplyMessage(UUID queryId, int fpId) {
+		super(queryId, Message.MessageType.FIND_PREDECESSOR_REPLY);
 		this.fpId = fpId;
 	}
 

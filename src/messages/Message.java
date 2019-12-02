@@ -3,7 +3,7 @@ package messages;
 import java.util.UUID;
 
 public abstract class Message {
-	enum MessageType{
+	public enum MessageType{
 		SUCCESSOR,
 		SUCCESSOR_REPLY,
 		CLOSEST_PRECEDING_FINGER,
@@ -22,10 +22,9 @@ public abstract class Message {
 	private int senderId;
 	private MessageType type;
 	
-	public Message(int senderId, MessageType type) {
-		this.senderId = senderId;
+	public Message(UUID queryId, MessageType type) {
+		this.queryId = queryId;
 		this.type = type;
-		this.queryId = UUID.randomUUID();
 	}
 	
 	public void setProcessingTick(double tick) {
@@ -34,6 +33,10 @@ public abstract class Message {
 	
 	public double getProcessingTick() {
 		return this.processingTick;
+	}
+	
+	public void setSenderId(int senderId) {
+		this.senderId = senderId;
 	}
 	
 	public UUID getQueryId() {
