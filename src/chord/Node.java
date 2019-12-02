@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import messages.Message;
 import repast.simphony.random.RandomHelper;
+import requests.Request;
 
 public class Node {
 	private ConcurrentLinkedQueue<Message> messageQueue;
