@@ -44,7 +44,8 @@ public abstract class Message {
 		return this.senderId;
 	}
 	
-	public MessageType getMessageType() {
+	public MessageType getType() {
 		return this.type;
 	}
+	
 }
