@@ -1,6 +1,10 @@
 package chord;
 
+import java.util.Iterator;
+
+import repast.simphony.context.Context;
 import repast.simphony.engine.environment.RunEnvironment;
+import repast.simphony.util.collections.IndexedIterable;
 
 public class Helper {
 	
@@ -16,9 +20,19 @@ public class Helper {
 		return (int) (Math.pow(2, index) % Math.pow(2, computeFingerTableSize(numberOfNodes)));
 	}
 	
-	public static Node getNodeById(int id) {
-		return null;
-		//TODO implement
+	public static Node getNodeById(int id, Context c) {
+		Node target = null;
+		IndexedIterable<Node> collection =  c.getObjects(Node.class);
+		Iterator<Node> iterator = collection.iterator();
+		
+		while(iterator.hasNext() & target == null) {
+			Node node = iterator.next();
+			if(node.getId() == id) {
+				target = node;
+			}
+		}
+		
+		return target;
 	}
 	
 	public static double getCurrentTick() {

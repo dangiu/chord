@@ -21,6 +21,7 @@ import messages.SuccessorMessage;
 import messages.SuccessorReplyMessage;
 import repast.simphony.engine.schedule.ScheduledMethod;
 import repast.simphony.random.RandomHelper;
+import repast.simphony.util.ContextUtils;
 import requests.FindPredecessorRequest;
 import requests.FindSuccessorRequest;
 import requests.FixFingerRequest;
@@ -45,13 +46,16 @@ public class Node {
 		
 		this.id = id;
 		
-		int fingerTableSize = Helper.computeFingerTableSize(Configuration.MAX_NUMBER_OF_NODES);
-		fingerTable = new int[fingerTableSize];
+		this.fingerTable = fingerTable.clone();
 		
 		this.predecessor = predecessor;
 		this.successors = successors.clone();
 		
 		this.active = active;
+	}
+	
+	public int getId() {
+		return this.id;
 	}
 	
 	@ScheduledMethod(start=1 , interval=1)
@@ -126,7 +130,7 @@ public class Node {
 				m.setProcessingTick(Helper.getCurrentTick() + randDelay);
 			}
 			
-			Node target = Helper.getNodeById(destination);
+			Node target = Helper.getNodeById(destination, ContextUtils.getContext(this));
 			target.appendMessage(m);
 		}
 	}
