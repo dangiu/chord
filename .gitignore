@@ -16,4 +16,8 @@ model_description.txt
 repast-licenses/
 bin/
 
+Repast.settings
+debug.log
+velocity.log
+
 # REMOVE EVERYTHING FOR THE FINAL PUSH SO THAT IMPORT CAN BE DONE EASILY
