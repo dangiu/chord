@@ -4,15 +4,15 @@ import java.util.UUID;
 
 public class FixFingerRequest extends Request {
 
-	private int queriedId;
+	private int fingerIndex;
 	
-	public FixFingerRequest(double creationTick, UUID queryID, int requesterId, int queriedId) {
+	public FixFingerRequest(double creationTick, UUID queryID, int requesterId, int fingerIndex) {
 		super(creationTick, queryID, requesterId, Request.RequestType.FIX_FINGER);
-		this.queriedId = queriedId;
+		this.fingerIndex = fingerIndex;
 	}
 	
-	public int getQueriedId() {
-		return this.queriedId;
+	public int getFingerIndex() {
+		return this.fingerIndex;
 	}
 
 }
