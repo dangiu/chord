@@ -15,6 +15,8 @@ import messages.FindSuccessorMessage;
 import messages.FindSuccessorReplyMessage;
 import messages.Message;
 import messages.NotifyMessage;
+import messages.PingMessage;
+import messages.PingReplyMessage;
 import messages.PredecessorMessage;
 import messages.PredecessorReplyMessage;
 import messages.SuccessorMessage;
@@ -25,11 +27,12 @@ import repast.simphony.util.ContextUtils;
 import requests.FindPredecessorRequest;
 import requests.FindSuccessorRequest;
 import requests.FixFingerRequest;
-import requests.GetMoreSuccessorsRequest;
+import requests.Stabilize2Request;
 import requests.JoinRequest;
+import requests.PingRequest;
 import requests.Request;
 import requests.Request.RequestType;
-import requests.StabilizeRequest;
+import requests.Stabilize1Request;
 
 public class Node {
 	private ConcurrentLinkedQueue<Message> messageQueue;
@@ -103,6 +106,10 @@ public class Node {
 					this.handleSuccessor((SuccessorMessage) m);
 				} else if(m.getType() == Message.MessageType.SUCCESSOR_REPLY) {
 					this.handleSuccessorReply((SuccessorReplyMessage) m);
+				} else if(m.getType() == Message.MessageType.PING) {
+					this.handlePing((PingMessage) m);
+				} else if(m.getType() == Message.MessageType.PING_REPLY) {
+					this.handlePingReply((PingReplyMessage) m);
 				} else {
 					System.err.println("step - unknown message received");
 				}
@@ -170,14 +177,19 @@ public class Node {
 					//request is timed out, remove it
 					it2.remove();
 					
-					//StabilizeRequests and GetMoreSuccessorsRequest tell us when a node crashed
-					//and needs to be removed form fingertable/successors array
+					//Stabilize1Request, Stabilize2Request, PingRequest
+					//tell us when a node crashed and needs to be removed
+					//from successors, fingerTable or predecessor
 					int crashedId = -1;
-					if(r.getType() == Request.RequestType.GET_MORE_SUCCESSORS) {
-						crashedId = ((GetMoreSuccessorsRequest) r).getQueriedId();
-					} else if(r.getType() == Request.RequestType.STABILIZE) {
-						crashedId = ((StabilizeRequest) r).getQueriedId();
+					if(r.getType() == Request.RequestType.STABILIZE2) {
+						crashedId = ((Stabilize2Request) r).getQueriedId();
+					} else if(r.getType() == Request.RequestType.STABILIZE1) {
+						crashedId = ((Stabilize1Request) r).getQueriedId();
+					} else if(r.getType() == Request.RequestType.PING) {
+						crashedId = ((PingRequest) r).getQueriedId();
 					}
+					
+					//a node has actually crashed
 					if(crashedId != -1) {
 						//remove failed successor from successors, if present (and shift everything back)
 						for(int i = 0; i < this.successors.length; i++) {
@@ -187,7 +199,7 @@ public class Node {
 								}
 							}
 						}
-						//if it was our immediate successor also need to change the first entry in the finger table
+						//update immediate successor in the finger table in case it has changed
 						this.fingerTable[0] = successors[0];
 						
 						//fix finger table, if present the finger is changed with the previous one
@@ -196,6 +208,10 @@ public class Node {
 							if(this.fingerTable[i] == crashedId) {
 								this.fingerTable[i] = this.fingerTable[i - 1];
 							}
+						}
+						//if the crashed node is our predecessor, set predecessor to nil value (-1)
+						if(this.predecessor == crashedId) {
+							this.predecessor = -1;
 						}
 					}
 				}
@@ -210,8 +226,7 @@ public class Node {
 	
 	private void handleSuccessor(SuccessorMessage m) {
 		//get our successor and send it back to the source of the message
-		int mySuccessor = this.fingerTable[0];
-		SuccessorReplyMessage reply = new SuccessorReplyMessage(m.getQueryId(), mySuccessor);
+		SuccessorReplyMessage reply = new SuccessorReplyMessage(m.getQueryId(), this.successors);
 		this.send(reply, m.getSender());
 	}
 	
@@ -229,8 +244,8 @@ public class Node {
 				this.resumeFindSuccessor2((FindSuccessorRequest) relatedRequest, m.getSId());
 			} else if (relatedRequest.getType() == RequestType.FIND_PREDECESSOR) {
 				this.resumeFindPredecessor1((FindPredecessorRequest) relatedRequest, m.getSId());
-			} else if (relatedRequest.getType() == RequestType.GET_MORE_SUCCESSORS) {
-				this.resumeGetMoreSuccessors((GetMoreSuccessorsRequest) relatedRequest, m.getSId());
+			} else if (relatedRequest.getType() == RequestType.STABILIZE2) {
+				this.resumeStabilize2((Stabilize2Request) relatedRequest, m.getSuccessors());
 			} else {
 				System.err.println("handleSuccessorReply - impossible RequestType retrieved!");
 			}
@@ -254,8 +269,8 @@ public class Node {
 			//while passing context saved in request table and data from message
 			Request relatedRequest = requests.remove(requests.size() - 1);
 			
-			if(relatedRequest.getType() == RequestType.STABILIZE) {
-				this.resumeStabilize((StabilizeRequest) relatedRequest, m.getPId());
+			if(relatedRequest.getType() == RequestType.STABILIZE1) {
+				this.resumeStabilize1((Stabilize1Request) relatedRequest, m.getPId());
 			} else {
 				System.err.println("handlePredecessorReply - impossible RequestType retrieved!");
 			}
@@ -478,96 +493,90 @@ public class Node {
 	}
 	
 	private void stabilize() {
-		//count number of entries in successors array
-		int successorsCount = 0;
-		int lastSuccessor = -1;
-		for(int i = 0; i < this.successors.length; i++) {
-			if(this.successors[i] != -1) {
-				successorsCount++;
-				lastSuccessor = this.successors[i];
-			}
-		}
-		if(successorsCount < this.successors.length) {
-			//need to fill successors array
-			//suspend execution and ask last entry to give me it's successor
+		//check if our predecessor is still alive if we have one
+		//if he replies ok, otherwise we will timeout and set it to -1
+		if(this.predecessor != -1) {
 			UUID queryId = UUID.randomUUID();
-			GetMoreSuccessorsRequest gmsr = new GetMoreSuccessorsRequest(Helper.getCurrentTick(), queryId, this.id, lastSuccessor);
+			PingMessage ping = new PingMessage(queryId);
+			this.send(ping, this.predecessor);
+			PingRequest pr = new PingRequest(Helper.getCurrentTick(), queryId, this.id, this.predecessor);
 			ArrayList<Request> requests = this.suspendedRequests.get(queryId);
 			if(requests == null) {
 				requests = new ArrayList<Request>();
 			}
-			requests.add(gmsr);
+			requests.add(pr);
 			this.suspendedRequests.put(queryId, requests);
-			SuccessorMessage sm = new SuccessorMessage(queryId);
-			this.send(sm, lastSuccessor);
 		}
-		//proceed with stabilizing each valid entry in the successor array
-		for(int i = 0; i < this.successors.length; i++) {
-			if(this.successors[i] != -1) {
-				//stabilize procedure
-				UUID queryId = UUID.randomUUID();
-				StabilizeRequest sr = new StabilizeRequest(Helper.getCurrentTick(), queryId, this.id, this.successors[i]);
-				ArrayList<Request> requests = this.suspendedRequests.get(queryId);
-				if(requests == null) {
-					requests = new ArrayList<Request>();
+		
+		//check if another stabilize call is in progress
+		//either Stabilize1Request or Stabilize2Request
+		//only one stabilize call must be active at any time!
+		boolean stabilizeAlreadyInProgress = false;
+		Iterator<ArrayList<Request>> it = this.suspendedRequests.values().iterator();
+		while(it.hasNext() && !stabilizeAlreadyInProgress) {
+			ArrayList<Request> currRequests = it.next();
+			Iterator<Request> it2 = currRequests.iterator();
+			while(it2.hasNext() && !stabilizeAlreadyInProgress) {
+				Request r = it2.next();
+				if(r.getType() == Request.RequestType.STABILIZE1 || r.getType() == Request.RequestType.STABILIZE2) {
+					stabilizeAlreadyInProgress = true;
 				}
-				requests.add(sr);
-				this.suspendedRequests.put(queryId, requests);
-				PredecessorMessage pm = new PredecessorMessage(queryId);
-				this.send(pm, this.successors[i]);
 			}
+		}
+		
+		if(!stabilizeAlreadyInProgress) {
+			//start stabilize process
+			//ask our successor for it's predecessor and suspend execution
+			UUID queryId = UUID.randomUUID();
+			Stabilize1Request sr = new Stabilize1Request(Helper.getCurrentTick(), queryId, this.id, successors[0]);
+			ArrayList<Request> requests = this.suspendedRequests.get(queryId);
+			if(requests == null) {
+				requests = new ArrayList<Request>();
+			}
+			requests.add(sr);
+			this.suspendedRequests.put(queryId, requests);
+			//send message to get the predecessor of our successor
+			PredecessorMessage pm = new PredecessorMessage(queryId);
+			this.send(pm, successors[0]);
 		}
 	}
 	
-	private void resumeGetMoreSuccessors(GetMoreSuccessorsRequest relatedRequest, int sId) {
-		int queriedId = relatedRequest.getQueriedId();
-		//scroll the successor vector and check if the queriedId still exists
-		//if it does, check whether entry after it is empty, add it if it is
-		for(int i = 0; i < this.successors.length - 1; i++) { //if the queriedId is in the last position we don't care, its successor will not be added anyway
-			if(this.successors[i] == queriedId && this.successors[i + 1] == -1) {
-				this.successors[i + 1] = sId;
+	private void resumeStabilize1(Stabilize1Request relatedRequest, int pId) {
+		//pseudocode of stabilize() but suspend execution before notify in order to ask for successors list
+		if(Helper.belongs(pId, this.id, false, this.successors[0], false)) {
+			//new node joined, update successors[0] and fingertable[0]
+			successors[0] = pId;
+			fingerTable[0] = pId;
+		}
+		//suspend execution and ask for successors list in order to get more successors
+		UUID queryId = UUID.randomUUID();
+		Stabilize2Request gmsr = new Stabilize2Request(Helper.getCurrentTick(), queryId, this.id, successors[0]);
+		ArrayList<Request> requests = this.suspendedRequests.get(queryId);
+		if(requests == null) {
+			requests = new ArrayList<Request>();
+		}
+		requests.add(gmsr);
+		this.suspendedRequests.put(queryId, requests);
+		//send message to get the predecessor of our successor
+		SuccessorMessage sm = new SuccessorMessage(queryId);
+		this.send(sm, successors[0]);
+	}
+	
+	private void resumeStabilize2(Stabilize2Request relatedRequest, int[] sSuccessors) {
+		//second part of the stabilize() procedure, update successors list and send notify to successor[0]
+		//update successors list based on sSuccessors
+		for(int i = 1; i < successors.length; i++) {
+			if(sSuccessors[i - 1] == this.id) {
+				//corner case where im inside the successor array 
+				//because is longer than the number of nodes in the system
 				break;
 			}
+			this.successors[i] = sSuccessors[i - 1];
 		}
-	}
-	
-	private void resumeStabilize(StabilizeRequest relatedRequest, int pId) {
-		//check if the queriedId was the first entry in the successors array (index 0)
-		if(relatedRequest.getQueriedId() == this.successors[0]) {
-			//if it is, we might have a new successor and the finger table must be changed
-			//also the notify needs to be called in that case
-			if(Helper.belongs(pId, this.id, false, this.successors[0], false)) {
-				this.fingerTable[0] = pId; //update finger table
-				int oldEntry = -1;
-				int newEntry = pId;
-				for(int j = 0; j < this.successors.length; j++) {
-					oldEntry = this.successors[j];
-					this.successors[j] = newEntry;
-					newEntry = oldEntry;
-				}
-			}
-			//call the notify (no need for suspension since method is over)
-			NotifyMessage nm = new NotifyMessage(UUID.randomUUID(), this.id);
-			this.send(nm, this.fingerTable[0]);
-		} else {
-			//otherwise just add the element (if needed) and shift everything back
-			for(int i = 1; i < this.successors.length; i++) { //can start form i=1 since i=0 is already covered by the code before
-				int queriedId = relatedRequest.getQueriedId();
-				if(this.successors[i] == queriedId) {
-					if(Helper.belongs(pId, this.successors[i - 1], false, this.successors[i], false)) {
-						//if we have actually discovered a new node, add it and shift everything
-						int oldEntry = -1;
-						int newEntry = pId;
-						for(int j = i; j < this.successors.length; j++) {
-							oldEntry = this.successors[j];
-							this.successors[j] = newEntry;
-							newEntry = oldEntry;
-						}
-					}
-				}
-			}
-			//no notify messages need to be sent in this case
-		}
+		
+		//send notify
+		NotifyMessage nm = new NotifyMessage(UUID.randomUUID(), this.id);
+		this.send(nm, successors[0]);
 	}
 	
 	private void handleNotify(NotifyMessage m) {
@@ -599,6 +608,16 @@ public class Node {
 	private void resumeFixFingers(FixFingerRequest relatedRequest, int fsId) {
 		int fingerIndex = relatedRequest.getFingerIndex();
 		this.fingerTable[fingerIndex] = fsId;
+	}
+	
+	private void handlePing(PingMessage m) {
+		PingReplyMessage reply = new PingReplyMessage(m.getQueryId());
+		this.send(reply, m.getSender());
+	}
+	
+	private void handlePingReply(PingReplyMessage m) {
+		//remove entry from suspendedRequest, pinged node is still alive
+		this.suspendedRequests.remove(m.getQueryId());
 	}
 	
 }

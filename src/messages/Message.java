@@ -14,7 +14,9 @@ public abstract class Message {
 		FIND_PREDECESSOR_REPLY,
 		PREDECESSOR,
 		PREDECESSOR_REPLY,
-		NOTIFY
+		NOTIFY,
+		PING,
+		PING_REPLY
 		};
 	
 	private double processingTick;
