@@ -16,8 +16,8 @@ public class Helper {
 		return (int) (Helper.log2(numberOfNodes));
 	}
 	
-	public static int computeFingerStart(int index, int numberOfNodes) {
-		return (int) (Math.pow(2, index) % Math.pow(2, computeFingerTableSize(numberOfNodes)));
+	public static int computeFingerStart(int index, int nId, int numberOfNodes) {
+		return (int) (nId + Math.pow(2, index) % Math.pow(2, computeFingerTableSize(numberOfNodes)));
 	}
 	
 	public static Node getNodeById(int id, Context c) {
@@ -40,6 +40,10 @@ public class Helper {
 	}
 	
 	public static boolean belongs(int id, int lowerBound, boolean lIncluded, int upperBound, boolean uIncluded) {
+		if(id == -1) {
+			//id -1 is considered to be the "nil" value, it does never belong to any interval
+			return false;
+		}
 		if(lowerBound <= upperBound) {
 			/**
 			 *      <----->

@@ -63,6 +63,21 @@ public class Node {
 		if(this.active) {
 			//check if the node wants to perform some operations (e.g. join/lookup/leave)
 			
+			
+			//check if stabilize must be executed
+			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
+			int randStabilize = RandomHelper.nextIntFromTo(1, Configuration.AVG_STABILIZE_INTERVAL);
+			if(randStabilize == Configuration.AVG_STABILIZE_INTERVAL) {
+				this.stabilize();
+			}
+			
+			//check if fix fingers must be executed
+			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
+			int randFixFingers = RandomHelper.nextIntFromTo(1, Configuration.AVG_FIX_FINGERS_INTERVAL);
+			if(randFixFingers == Configuration.AVG_FIX_FINGERS_INTERVAL) {
+				this.fixFingers();
+			}
+			
 			//process incoming messages
 			Message m = this.receive();
 			while(m != null) {
@@ -92,18 +107,6 @@ public class Node {
 					System.err.println("step - unknown message received");
 				}
 				m = this.receive(); //continue with next message
-			}
-			
-			//check if stabilize must be executed
-			int randStabilize = RandomHelper.nextIntFromTo(1, Configuration.AVG_STABILIZE_INTERVAL);
-			if(randStabilize == Configuration.AVG_STABILIZE_INTERVAL) {
-				this.stabilize();
-			}
-			
-			//check if fix fingers must be executed
-			int randFixFingers = RandomHelper.nextIntFromTo(1, Configuration.AVG_FIX_FINGERS_INTERVAL);
-			if(randFixFingers == Configuration.AVG_FIX_FINGERS_INTERVAL) {
-				this.fixFingers();
 			}
 			
 			//clean timed out requests
@@ -143,7 +146,7 @@ public class Node {
 		Iterator<Message> it = messageQueue.iterator();
 		while(it.hasNext()) {
 			Message m = it.next();
-			if(m.getProcessingTick() == Helper.getCurrentTick()) { // check if message must be processed this tick
+			if(m.getProcessingTick() <= Helper.getCurrentTick()) { // check if message must be processed this tick
 				it.remove();
 				return m;
 			}
@@ -220,7 +223,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
-			Request relatedRequest = requests.remove(requests.size());
+			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.FIND_SUCCESSOR) {
 				this.resumeFindSuccessor2((FindSuccessorRequest) relatedRequest, m.getSId());
@@ -249,7 +252,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
-			Request relatedRequest = requests.remove(requests.size());
+			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.STABILIZE) {
 				this.resumeStabilize((StabilizeRequest) relatedRequest, m.getPId());
@@ -276,7 +279,7 @@ public class Node {
 		currentList.add(currentList.size(), frs);
 		
 		//update issuedRequests
-		this.suspendedRequests.replace(queryId, currentList);
+		this.suspendedRequests.put(queryId, currentList);
 		
 		//create and send FindPredecessorMessage (perform local call to find_predecessor())
 		FindPredecessorMessage fpm = new FindPredecessorMessage(queryId, m.getTargetId());
@@ -291,7 +294,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
-			Request relatedRequest = requests.remove(requests.size());
+			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.JOIN) {
 				//find_successor() was called during the join() method, proceed with execution
@@ -309,6 +312,7 @@ public class Node {
 		//append request to suspendedRequests and send message to get successor of fpId (request needs to be suspended again)
 		ArrayList<Request> requests = this.suspendedRequests.get(relatedRequest.getQueryId());
 		requests.add(relatedRequest);
+		this.suspendedRequests.put(relatedRequest.getQueryId(), requests);
 		//request for the successor of the returned node
 		SuccessorMessage sm = new SuccessorMessage(relatedRequest.getQueryId());
 		this.send(sm, fpId);
@@ -331,6 +335,7 @@ public class Node {
 			requests = new ArrayList<Request>();
 		}
 		requests.add(fpr);
+		this.suspendedRequests.put(m.getQueryId(), requests);
 		//send successor message to nPrime
 		SuccessorMessage sm = new SuccessorMessage(m.getQueryId());
 		this.send(sm, nPrime);
@@ -344,7 +349,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
-			Request relatedRequest = requests.remove(requests.size());
+			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.FIND_SUCCESSOR) {
 				//find_predecessor() was called during the find_successor() method, proceed with execution
@@ -365,6 +370,7 @@ public class Node {
 				requests = new ArrayList<Request>();
 			}
 			requests.add(relatedRequest);
+			this.suspendedRequests.put(relatedRequest.getQueryId(), requests);
 			//ask closest preceding finger to nPrime
 			ClosestPrecedingFingerMessage cpfm = new ClosestPrecedingFingerMessage(relatedRequest.getQueryId(), id);
 			this.send(cpfm, nPrime);
@@ -386,6 +392,7 @@ public class Node {
 			requests = new ArrayList<Request>();
 		}
 		requests.add(updatedRequest);
+		this.suspendedRequests.put(updatedRequest.getQueryId(), requests);
 		//send successor message to new nPrime
 		SuccessorMessage sm = new SuccessorMessage(updatedRequest.getQueryId());
 		this.send(sm, updatedRequest.getNPrime());
@@ -394,7 +401,7 @@ public class Node {
 	private void handleClosestPrecedingFinger(ClosestPrecedingFingerMessage m) {
 		int cpfId = -1;
 		//get closest preceding finger and send it back to the source of the message
-		for(int i = this.fingerTable.length; i > 0; i--) { //TODO check corner case might need a -1
+		for(int i = this.fingerTable.length - 1; i > 0; i--) {
 			if(Helper.belongs(fingerTable[i], this.id, false, m.getTargetId(), false)) {
 				//closest preceding finger found
 				cpfId = fingerTable[i];
@@ -418,7 +425,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
-			Request relatedRequest = requests.remove(requests.size());
+			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.FIND_PREDECESSOR) {
 				//closest_preceding_finger() was called during find_predecessor(), resume method execution
@@ -457,6 +464,7 @@ public class Node {
 				requests = new ArrayList<Request>();
 			}
 			requests.add(jr);
+			this.suspendedRequests.put(queryId, requests);
 			FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, this.id);
 			this.send(fsm, entryPointId);
 		} else {
@@ -489,6 +497,7 @@ public class Node {
 				requests = new ArrayList<Request>();
 			}
 			requests.add(gmsr);
+			this.suspendedRequests.put(queryId, requests);
 			SuccessorMessage sm = new SuccessorMessage(queryId);
 			this.send(sm, lastSuccessor);
 		}
@@ -503,6 +512,7 @@ public class Node {
 					requests = new ArrayList<Request>();
 				}
 				requests.add(sr);
+				this.suspendedRequests.put(queryId, requests);
 				PredecessorMessage pm = new PredecessorMessage(queryId);
 				this.send(pm, this.successors[i]);
 			}
@@ -580,7 +590,8 @@ public class Node {
 				requests = new ArrayList<Request>();
 			}
 			requests.add(ffr);
-			FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, Helper.computeFingerStart(i, Configuration.MAX_NUMBER_OF_NODES));
+			this.suspendedRequests.put(queryId, requests);
+			FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, Helper.computeFingerStart(i, this.id, Configuration.MAX_NUMBER_OF_NODES));
 			this.send(fsm, this.id);
 		}
 	}
