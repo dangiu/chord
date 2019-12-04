@@ -8,6 +8,7 @@ public class PredecessorReplyMessage extends Message {
 
 	public PredecessorReplyMessage(UUID queryId, int pId) {
 		super(queryId, Message.MessageType.PREDECESSOR_REPLY);
+		this.pId = pId;
 	}
 	
 	public int getPId() {

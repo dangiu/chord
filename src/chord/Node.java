@@ -63,6 +63,21 @@ public class Node {
 		if(this.active) {
 			//check if the node wants to perform some operations (e.g. join/lookup/leave)
 			
+			
+			//check if stabilize must be executed
+			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
+			int randStabilize = RandomHelper.nextIntFromTo(1, Configuration.AVG_STABILIZE_INTERVAL);
+			if(randStabilize == Configuration.AVG_STABILIZE_INTERVAL) {
+				this.stabilize();
+			}
+			
+			//check if fix fingers must be executed
+			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
+			int randFixFingers = RandomHelper.nextIntFromTo(1, Configuration.AVG_FIX_FINGERS_INTERVAL);
+			if(randFixFingers == Configuration.AVG_FIX_FINGERS_INTERVAL) {
+				this.fixFingers();
+			}
+			
 			//process incoming messages
 			Message m = this.receive();
 			while(m != null) {
@@ -92,18 +107,6 @@ public class Node {
 					System.err.println("step - unknown message received");
 				}
 				m = this.receive(); //continue with next message
-			}
-			
-			//check if stabilize must be executed
-			int randStabilize = RandomHelper.nextIntFromTo(1, Configuration.AVG_STABILIZE_INTERVAL);
-			if(randStabilize == Configuration.AVG_STABILIZE_INTERVAL) {
-				this.stabilize();
-			}
-			
-			//check if fix fingers must be executed
-			int randFixFingers = RandomHelper.nextIntFromTo(1, Configuration.AVG_FIX_FINGERS_INTERVAL);
-			if(randFixFingers == Configuration.AVG_FIX_FINGERS_INTERVAL) {
-				this.fixFingers();
 			}
 			
 			//clean timed out requests
@@ -398,7 +401,7 @@ public class Node {
 	private void handleClosestPrecedingFinger(ClosestPrecedingFingerMessage m) {
 		int cpfId = -1;
 		//get closest preceding finger and send it back to the source of the message
-		for(int i = this.fingerTable.length; i > 0; i--) { //TODO check corner case might need a -1
+		for(int i = this.fingerTable.length - 1; i > 0; i--) {
 			if(Helper.belongs(fingerTable[i], this.id, false, m.getTargetId(), false)) {
 				//closest preceding finger found
 				cpfId = fingerTable[i];
@@ -588,7 +591,7 @@ public class Node {
 			}
 			requests.add(ffr);
 			this.suspendedRequests.put(queryId, requests);
-			FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, Helper.computeFingerStart(i, Configuration.MAX_NUMBER_OF_NODES));
+			FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, Helper.computeFingerStart(i, this.id, Configuration.MAX_NUMBER_OF_NODES));
 			this.send(fsm, this.id);
 		}
 	}
