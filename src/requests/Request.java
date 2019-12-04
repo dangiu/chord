@@ -7,9 +7,10 @@ public abstract class Request {
 		FIND_SUCCESSOR,
 		FIND_PREDECESSOR,
 		JOIN,
-		GET_MORE_SUCCESSORS,
-		STABILIZE,
-		FIX_FINGER
+		STABILIZE1,
+		STABILIZE2,
+		FIX_FINGER,
+		PING
 	};
 	
 	private double creationTick;
