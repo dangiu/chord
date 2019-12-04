@@ -146,7 +146,7 @@ public class Node {
 		Iterator<Message> it = messageQueue.iterator();
 		while(it.hasNext()) {
 			Message m = it.next();
-			if(m.getProcessingTick() == Helper.getCurrentTick()) { // check if message must be processed this tick
+			if(m.getProcessingTick() <= Helper.getCurrentTick()) { // check if message must be processed this tick
 				it.remove();
 				return m;
 			}
