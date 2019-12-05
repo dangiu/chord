@@ -63,6 +63,12 @@ public class Node {
 	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
+		
+		// DEBUGGING PURPOSES
+		if(!this.active && Helper.getCurrentTick() == 2000) {
+			this.join(50);
+		}
+		
 		if(this.active) {
 			//check if the node wants to perform some operations (e.g. join/lookup/leave)
 			
@@ -119,8 +125,18 @@ public class Node {
 			//clean timed out requests
 			this.cleanTimedOutRequests();
 			
+		} else {
+			//if node is inactive, but it's trying to join
+			//we need to check if our entry point has answered our query
+			//and resume the join procedure
+			Message m = this.receive();
+			while(m != null) {
+				if(m.getType() == Message.MessageType.FIND_SUCCESSOR_REPLY) {
+					this.handleFindSuccessorReply((FindSuccessorReplyMessage) m);
+				}
+				m = this.receive(); //continue with next message
+			}
 		}
-		
 		
 	}
 	
@@ -490,6 +506,8 @@ public class Node {
 	private void resumeJoin(JoinRequest relatedRequest, int fsId) {
 		this.fingerTable[0] = fsId;
 		successors[0] = fsId;
+		//join procedure completed set flag active
+		this.active = true;
 	}
 	
 	private void stabilize() {
