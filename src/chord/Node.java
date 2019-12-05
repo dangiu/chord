@@ -69,10 +69,9 @@ public class Node {
 			this.join(50);
 		}
 		
+		//check if the node wants to perform some operations (e.g. join/lookup/leave)
+		
 		if(this.active) {
-			//check if the node wants to perform some operations (e.g. join/lookup/leave)
-			
-			
 			//check if stabilize must be executed
 			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
 			int randStabilize = RandomHelper.nextIntFromTo(1, Configuration.AVG_STABILIZE_INTERVAL);
@@ -125,7 +124,7 @@ public class Node {
 			//clean timed out requests
 			this.cleanTimedOutRequests();
 			
-		} else {
+		} else if(!this.active) {
 			//if node is inactive, but it's trying to join
 			//we need to check if our entry point has answered our query
 			//and resume the join procedure
@@ -494,7 +493,7 @@ public class Node {
 			for(int i = 0; i < this.successors.length; i++) {
 				this.successors[i] = -1;
 			}
-			
+			//reset predecessor
 			this.predecessor = -1;
 			//suspend execution and ask our entry point to find the successor of our id
 			UUID queryId = UUID.randomUUID();
@@ -647,4 +646,25 @@ public class Node {
 		this.suspendedRequests.remove(m.getQueryId());
 	}
 	
+	/**
+	 * Crash the node without notifying other nodes
+	 */
+	public void crash() {
+		//set active to false
+		this.active = false;
+		//empty message queue
+		this.messageQueue.clear();
+		//empty suspendedRequests
+		this.suspendedRequests.clear();
+		//reset finger table
+		for(int i = 0; i < fingerTable.length; i++) {
+			this.fingerTable[i] = -1;
+		}
+		//reset successors
+		for(int i = 0; i < this.successors.length; i++) {
+			this.successors[i] = -1;
+		}
+		//reset predecessor
+		this.predecessor = -1;
+	}
 }
