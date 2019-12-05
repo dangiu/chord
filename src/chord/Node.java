@@ -129,10 +129,19 @@ public class Node {
 			//if node is inactive, but it's trying to join
 			//we need to check if our entry point has answered our query
 			//and resume the join procedure
+			//otherwise we just discard the messages
 			Message m = this.receive();
 			while(m != null) {
 				if(m.getType() == Message.MessageType.FIND_SUCCESSOR_REPLY) {
-					this.handleFindSuccessorReply((FindSuccessorReplyMessage) m);
+					FindSuccessorReplyMessage fsrm = (FindSuccessorReplyMessage) m;
+					UUID queryId = fsrm.getQueryId();
+					ArrayList<Request> requests = this.suspendedRequests.get(queryId);
+					if(requests != null) {
+						Request joinRequest = requests.remove(requests.size() - 1);
+						if(joinRequest.getType() == RequestType.JOIN) {
+							this.resumeJoin((JoinRequest) joinRequest, fsrm.getFsId());
+						}
+					}
 				}
 				m = this.receive(); //continue with next message
 			}
