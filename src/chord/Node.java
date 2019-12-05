@@ -416,7 +416,7 @@ public class Node {
 	private void handleClosestPrecedingFinger(ClosestPrecedingFingerMessage m) {
 		int cpfId = -1;
 		//get closest preceding finger and send it back to the source of the message
-		for(int i = this.fingerTable.length - 1; i > 0; i--) {
+		for(int i = this.fingerTable.length - 1; i >= 0; i--) {
 			if(Helper.belongs(fingerTable[i], this.id, false, m.getTargetId(), false)) {
 				//closest preceding finger found
 				cpfId = fingerTable[i];
