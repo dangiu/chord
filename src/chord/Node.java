@@ -63,10 +63,19 @@ public class Node {
 	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
+		
+		// DEBUGGING PURPOSES
+		if(!this.active && Helper.getCurrentTick() == 2000 & this.id == 0) {
+			this.join(228); //node id must exist, use seed: 525.425.337
+		}
+		
+		if(this.active && Helper.getCurrentTick() == 10000 && this.id == 0) {
+			this.crash();
+		}
+		
+		//check if the node wants to perform some operations (e.g. join/lookup/leave)
+		
 		if(this.active) {
-			//check if the node wants to perform some operations (e.g. join/lookup/leave)
-			
-			
 			//check if stabilize must be executed
 			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
 			int randStabilize = RandomHelper.nextIntFromTo(1, Configuration.AVG_STABILIZE_INTERVAL);
@@ -119,8 +128,27 @@ public class Node {
 			//clean timed out requests
 			this.cleanTimedOutRequests();
 			
+		} else if(!this.active) {
+			//if node is inactive, but it's trying to join
+			//we need to check if our entry point has answered our query
+			//and resume the join procedure
+			//otherwise we just discard the messages
+			Message m = this.receive();
+			while(m != null) {
+				if(m.getType() == Message.MessageType.FIND_SUCCESSOR_REPLY) {
+					FindSuccessorReplyMessage fsrm = (FindSuccessorReplyMessage) m;
+					UUID queryId = fsrm.getQueryId();
+					ArrayList<Request> requests = this.suspendedRequests.get(queryId);
+					if(requests != null) {
+						Request joinRequest = requests.remove(requests.size() - 1);
+						if(joinRequest.getType() == RequestType.JOIN) {
+							this.resumeJoin((JoinRequest) joinRequest, fsrm.getFsId());
+						}
+					}
+				}
+				m = this.receive(); //continue with next message
+			}
 		}
-		
 		
 	}
 	
@@ -416,7 +444,7 @@ public class Node {
 	private void handleClosestPrecedingFinger(ClosestPrecedingFingerMessage m) {
 		int cpfId = -1;
 		//get closest preceding finger and send it back to the source of the message
-		for(int i = this.fingerTable.length - 1; i > 0; i--) {
+		for(int i = this.fingerTable.length - 1; i >= 0; i--) {
 			if(Helper.belongs(fingerTable[i], this.id, false, m.getTargetId(), false)) {
 				//closest preceding finger found
 				cpfId = fingerTable[i];
@@ -469,7 +497,7 @@ public class Node {
 			for(int i = 0; i < this.successors.length; i++) {
 				this.successors[i] = -1;
 			}
-			
+			//reset predecessor
 			this.predecessor = -1;
 			//suspend execution and ask our entry point to find the successor of our id
 			UUID queryId = UUID.randomUUID();
@@ -490,6 +518,8 @@ public class Node {
 	private void resumeJoin(JoinRequest relatedRequest, int fsId) {
 		this.fingerTable[0] = fsId;
 		successors[0] = fsId;
+		//join procedure completed set flag active
+		this.active = true;
 	}
 	
 	private void stabilize() {
@@ -545,12 +575,12 @@ public class Node {
 		//pseudocode of stabilize() but suspend execution before notify in order to ask for successors list
 		if(Helper.belongs(pId, this.id, false, this.successors[0], false)) {
 			//new node joined, update successors[0] and fingertable[0]
-			successors[0] = pId;
+			this.successors[0] = pId;
 			fingerTable[0] = pId;
 		}
 		//suspend execution and ask for successors list in order to get more successors
 		UUID queryId = UUID.randomUUID();
-		Stabilize2Request gmsr = new Stabilize2Request(Helper.getCurrentTick(), queryId, this.id, successors[0]);
+		Stabilize2Request gmsr = new Stabilize2Request(Helper.getCurrentTick(), queryId, this.id, this.successors[0]);
 		ArrayList<Request> requests = this.suspendedRequests.get(queryId);
 		if(requests == null) {
 			requests = new ArrayList<Request>();
@@ -559,16 +589,20 @@ public class Node {
 		this.suspendedRequests.put(queryId, requests);
 		//send message to get the predecessor of our successor
 		SuccessorMessage sm = new SuccessorMessage(queryId);
-		this.send(sm, successors[0]);
+		this.send(sm, this.successors[0]);
 	}
 	
 	private void resumeStabilize2(Stabilize2Request relatedRequest, int[] sSuccessors) {
 		//second part of the stabilize() procedure, update successors list and send notify to successor[0]
 		//update successors list based on sSuccessors
-		for(int i = 1; i < successors.length; i++) {
+		for(int i = 1; i < this.successors.length; i++) {
 			if(sSuccessors[i - 1] == this.id) {
 				//corner case where im inside the successor array 
 				//because is longer than the number of nodes in the system
+				//remove the rest of the successors (set them to -1) and break
+				for(int j = i; j < this.successors.length; j++) {
+					this.successors[j] = -1;
+				}
 				break;
 			}
 			this.successors[i] = sSuccessors[i - 1];
@@ -620,4 +654,25 @@ public class Node {
 		this.suspendedRequests.remove(m.getQueryId());
 	}
 	
+	/**
+	 * Crash the node without notifying other nodes
+	 */
+	public void crash() {
+		//set active to false
+		this.active = false;
+		//empty message queue
+		this.messageQueue.clear();
+		//empty suspendedRequests
+		this.suspendedRequests.clear();
+		//reset finger table
+		for(int i = 0; i < fingerTable.length; i++) {
+			this.fingerTable[i] = -1;
+		}
+		//reset successors
+		for(int i = 0; i < this.successors.length; i++) {
+			this.successors[i] = -1;
+		}
+		//reset predecessor
+		this.predecessor = -1;
+	}
 }
