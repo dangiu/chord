@@ -65,8 +65,12 @@ public class Node {
 	public void step() {
 		
 		// DEBUGGING PURPOSES
-		if(!this.active && Helper.getCurrentTick() == 2000) {
-			this.join(50);
+		if(!this.active && Helper.getCurrentTick() == 2000 & this.id == 0) {
+			this.join(228); //node id must exist, use seed: 525.425.337
+		}
+		
+		if(this.active && Helper.getCurrentTick() == 10000 && this.id == 0) {
+			this.crash();
 		}
 		
 		//check if the node wants to perform some operations (e.g. join/lookup/leave)
@@ -571,12 +575,12 @@ public class Node {
 		//pseudocode of stabilize() but suspend execution before notify in order to ask for successors list
 		if(Helper.belongs(pId, this.id, false, this.successors[0], false)) {
 			//new node joined, update successors[0] and fingertable[0]
-			successors[0] = pId;
+			this.successors[0] = pId;
 			fingerTable[0] = pId;
 		}
 		//suspend execution and ask for successors list in order to get more successors
 		UUID queryId = UUID.randomUUID();
-		Stabilize2Request gmsr = new Stabilize2Request(Helper.getCurrentTick(), queryId, this.id, successors[0]);
+		Stabilize2Request gmsr = new Stabilize2Request(Helper.getCurrentTick(), queryId, this.id, this.successors[0]);
 		ArrayList<Request> requests = this.suspendedRequests.get(queryId);
 		if(requests == null) {
 			requests = new ArrayList<Request>();
@@ -585,16 +589,20 @@ public class Node {
 		this.suspendedRequests.put(queryId, requests);
 		//send message to get the predecessor of our successor
 		SuccessorMessage sm = new SuccessorMessage(queryId);
-		this.send(sm, successors[0]);
+		this.send(sm, this.successors[0]);
 	}
 	
 	private void resumeStabilize2(Stabilize2Request relatedRequest, int[] sSuccessors) {
 		//second part of the stabilize() procedure, update successors list and send notify to successor[0]
 		//update successors list based on sSuccessors
-		for(int i = 1; i < successors.length; i++) {
+		for(int i = 1; i < this.successors.length; i++) {
 			if(sSuccessors[i - 1] == this.id) {
 				//corner case where im inside the successor array 
 				//because is longer than the number of nodes in the system
+				//remove the rest of the successors (set them to -1) and break
+				for(int j = i; j < this.successors.length; j++) {
+					this.successors[j] = -1;
+				}
 				break;
 			}
 			this.successors[i] = sSuccessors[i - 1];
