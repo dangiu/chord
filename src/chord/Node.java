@@ -64,6 +64,7 @@ public class Node {
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
 		
+		/*
 		// DEBUGGING PURPOSES
 		if(!this.active && Helper.getCurrentTick() == 2000 & this.id == 0) {
 			this.join(228); //node id must exist, use seed: 525.425.337
@@ -72,6 +73,7 @@ public class Node {
 		if(this.active && Helper.getCurrentTick() == 10000 && this.id == 0) {
 			this.crash();
 		}
+		*/
 		
 		//check if the node wants to perform some operations (e.g. join/lookup/leave)
 		

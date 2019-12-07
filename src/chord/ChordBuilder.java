@@ -4,8 +4,12 @@ import java.util.HashMap;
 import java.util.TreeSet;
 
 import repast.simphony.context.Context;
+import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
+import repast.simphony.context.space.continuous.ContinuousSpaceFactoryFinder;
 import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.random.RandomHelper;
+import repast.simphony.space.continuous.ContinuousSpace;
+import visualization.ChordSpaceAdder;
 
 public class ChordBuilder implements ContextBuilder<Object> {
 	
@@ -18,6 +22,16 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		context.setId("chord");
 		//load parameters from repast simulator
 		Configuration.load();
+		
+		//VISUALIZATION
+		//create projections
+		// Create projections
+		//NetworkBuilder<Object> builder = new NetworkBuilder("process_network", context, true);
+		//Network<Object> network = builder.buildNetwork();
+		ContinuousSpaceFactory spaceFactory = ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(new HashMap<>());
+		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context, new ChordSpaceAdder<Object>(), new repast.simphony.space.continuous.WrapAroundBorders(), 100, 100);
+				
+				
 				
 		unsubscribedProcesses = new HashMap<>();
 		
