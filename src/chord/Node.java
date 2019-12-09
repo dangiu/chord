@@ -195,8 +195,40 @@ public class Node {
 			Node target = Helper.getNodeById(destination, ContextUtils.getContext(this));
 			
 			//update visualization
-			if(m.getQueryId() == this.vis.getCurrentVisualizedQuery())
-				this.vis.addEdge(this, target, Visualization.EdgeType.QUERY);
+			if(m.getQueryId() == this.vis.getCurrentVisualizedQuery()) {
+				if(
+						m.getType() == Message.MessageType.CLOSEST_PRECEDING_FINGER
+						||
+						m.getType() == Message.MessageType.FIND_PREDECESSOR
+						||
+						m.getType() == Message.MessageType.FIND_SUCCESSOR
+						||
+						m.getType() == Message.MessageType.NOTIFY
+						||
+						m.getType() == Message.MessageType.PING
+						||
+						m.getType() == Message.MessageType.PREDECESSOR
+						||
+						m.getType() == Message.MessageType.SUCCESSOR
+					) {
+					this.vis.addEdge(this, target, Visualization.EdgeType.QUERY);
+				} else if(
+						m.getType() == Message.MessageType.CLOSEST_PRECEDING_FINGER_REPLY
+						||
+						m.getType() == Message.MessageType.FIND_PREDECESSOR_REPLY
+						||
+						m.getType() == Message.MessageType.FIND_SUCCESSOR_REPLY
+						||
+						m.getType() == Message.MessageType.PING_REPLY
+						||
+						m.getType() == Message.MessageType.PREDECESSOR_REPLY
+						||
+						m.getType() == Message.MessageType.SUCCESSOR_REPLY
+						) {
+					this.vis.addEdge(this, target, Visualization.EdgeType.REPLY);
+				}
+			}
+				
 			
 			target.appendMessage(m);
 		}

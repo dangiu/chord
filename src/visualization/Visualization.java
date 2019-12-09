@@ -13,7 +13,7 @@ import repast.simphony.space.graph.Network;
 
 public class Visualization {
 	
-	public enum EdgeType {SUCCESSOR, QUERY}
+	public enum EdgeType {SUCCESSOR, QUERY, REPLY}
 	public Network<Object> network; 
 	public Context<Object> context;
 	public final Color[] colors = new Color[] {Color.CYAN, Color.YELLOW, Color.MAGENTA};
