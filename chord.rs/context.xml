@@ -1,3 +1,4 @@
 <context id="chord" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://repast.org/scenario/context">
+  	<projection type ="network" id="node_network"/>
   	<projection type ="continuous space" id="space"/>
 </context>

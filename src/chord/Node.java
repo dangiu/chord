@@ -27,12 +27,14 @@ import repast.simphony.util.ContextUtils;
 import requests.FindPredecessorRequest;
 import requests.FindSuccessorRequest;
 import requests.FixFingerRequest;
-import requests.Stabilize2Request;
 import requests.JoinRequest;
+import requests.LookupRequest;
 import requests.PingRequest;
 import requests.Request;
 import requests.Request.RequestType;
 import requests.Stabilize1Request;
+import requests.Stabilize2Request;
+import visualization.Visualization;
 
 public class Node {
 	private ConcurrentLinkedQueue<Message> messageQueue;
@@ -43,7 +45,13 @@ public class Node {
 	private int[] successors;
 	private boolean active;
 	
-	public Node(int id, int[] fingerTable, int predecessor, int[] successors, boolean active) {
+	//ATTRIBUTES FOR VISUALIZATION
+	public Visualization vis;
+	public boolean visQueryTimeout;
+	public double visQueryTimeoutTick;
+	
+	
+	public Node(int id, int[] fingerTable, int predecessor, int[] successors, boolean active, Visualization vis) {
 		this.messageQueue = new ConcurrentLinkedQueue<Message>();
 		this.suspendedRequests = new HashMap<UUID, ArrayList<Request>>();
 		
@@ -55,16 +63,25 @@ public class Node {
 		this.successors = successors.clone();
 		
 		this.active = active;
+		
+		//visualization attributes
+		this.vis = vis;
+		this.visQueryTimeout = false;
+		this.visQueryTimeoutTick = -1;		
 	}
 	
 	public int getId() {
 		return this.id;
 	}
 	
+	public boolean isActive() {
+		return this.active;
+	}
+	
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
 		
-		/*
+		
 		// DEBUGGING PURPOSES
 		if(!this.active && Helper.getCurrentTick() == 2000 & this.id == 0) {
 			this.join(228); //node id must exist, use seed: 525.425.337
@@ -73,7 +90,12 @@ public class Node {
 		if(this.active && Helper.getCurrentTick() == 10000 && this.id == 0) {
 			this.crash();
 		}
-		*/
+		
+		// lookup debugging
+		if(this.active && Helper.getCurrentTick() == 3000 && this.id == 0) {
+			this.lookup();
+		}
+		
 		
 		//check if the node wants to perform some operations (e.g. join/lookup/leave)
 		
@@ -171,6 +193,11 @@ public class Node {
 			}
 			
 			Node target = Helper.getNodeById(destination, ContextUtils.getContext(this));
+			
+			//update visualization
+			if(m.getQueryId() == this.vis.getCurrentVisualizedQuery())
+				this.vis.addEdge(this, target, Visualization.EdgeType.QUERY);
+			
 			target.appendMessage(m);
 		}
 	}
@@ -347,6 +374,9 @@ public class Node {
 			} else if(relatedRequest.getType() == RequestType.FIX_FINGER) {
 				//find_successor() was called during the fix_fingers() method, proceed with execution
 				this.resumeFixFingers((FixFingerRequest) relatedRequest, m.getFsId());
+			} else if(relatedRequest.getType() == RequestType.LOOKUP) {
+				//find_successor() was called during the lookup() method, proceed with execution
+				this.resumeLookup((LookupRequest) relatedRequest, m.getFsId());
 			} else {
 				System.err.println("handleFindSuccessorReply - impossible RequestType retrieved!");
 			}
@@ -676,5 +706,65 @@ public class Node {
 		}
 		//reset predecessor
 		this.predecessor = -1;
+	}
+	
+	/**
+	 * Tell the current node to perform a lookup for the specified key
+	 * @param key
+	 */
+	public void lookup(int key) {		
+		//suspend execution and store LookupRequest
+		UUID queryId = UUID.randomUUID();
+		
+		//update visualization
+		this.vis.notifyNewQuery(queryId, this.id);
+		
+		LookupRequest lr = new LookupRequest(Helper.getCurrentTick(), queryId, this.id, key);
+		
+		ArrayList<Request> currentList = this.suspendedRequests.get(queryId);
+		//if not existent, initialize empty list
+		if(currentList == null) {
+			//initialize empty list for that queryId, insert request, update issuedRequests
+			currentList = new ArrayList<Request>();
+		}
+		//add request at the end of the list
+		currentList.add(currentList.size(), lr);
+		
+		//update issuedRequests
+		this.suspendedRequests.put(queryId, currentList);
+		
+		//create and send FindSuccessorMessage (perform local call to find_successor())
+		FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, key);
+		this.send(fsm, this.id); //call is local, the message is sent to myself
+	}
+	
+	/**
+	 * Wrapper methods, tell the current node to performa a lookup for a random id
+	 */
+	public void lookup() {
+		//generate random key
+		int key = RandomHelper.nextIntFromTo(0, Configuration.MAX_NUMBER_OF_NODES - 1);
+		//call lockup
+		this.lookup(key);
+	}
+	
+	public void resumeLookup(LookupRequest relatedRequest, int fsId) {
+		//fsId is the id of the node that holds the key we are looking for (first successor of key)
+		//update visualization
+		this.vis.notifyQueryCompleted(relatedRequest.getQueryId());
+	}
+
+	// TODO possibly to remove, see if used somewhere
+	public boolean hasVisualizedQuery() {
+		UUID queryId = this.vis.getCurrentVisualizedQuery();
+		ArrayList<Request> r = this.suspendedRequests.get(queryId);
+		if(r != null && r.size() > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public int[] getSuccs() {
+		return this.successors.clone();
 	}
 }
