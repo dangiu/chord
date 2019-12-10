@@ -45,7 +45,7 @@ public class Node {
 	private int[] successors;
 	private boolean active;
 	
-	//ATTRIBUTES FOR VISUALIZATION
+	//attributes for visualization
 	public Visualization vis;
 	public boolean visQueryTimeout;
 	public double visQueryTimeoutTick;
@@ -81,7 +81,7 @@ public class Node {
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {
 		
-		
+		/*
 		// DEBUGGING PURPOSES
 		if(!this.active && Helper.getCurrentTick() == 2000 & this.id == 0) {
 			this.join(228); //node id must exist, use seed: 525.425.337
@@ -100,9 +100,7 @@ public class Node {
 		if(this.active && Helper.getCurrentTick() == 10001 && this.id == 41) {
 			this.lookup(1);
 		}
-		
-		
-		//check if the node wants to perform some operations (e.g. join/lookup/leave)
+		*/
 		
 		if(this.active) {
 			//check if stabilize must be executed
@@ -803,16 +801,6 @@ public class Node {
 		//fsId is the id of the node that holds the key we are looking for (first successor of key)
 		//update visualization
 		this.vis.notifyQueryCompleted(relatedRequest.getQueryId());
-	}
-
-	// TODO possibly to remove, see if used somewhere
-	public boolean hasVisualizedQuery() {
-		UUID queryId = this.vis.getCurrentVisualizedQuery();
-		ArrayList<Request> r = this.suspendedRequests.get(queryId);
-		if(r != null && r.size() > 0) {
-			return true;
-		}
-		return false;
 	}
 	
 	public int[] getSuccs() {
