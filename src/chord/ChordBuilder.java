@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
 
+import analysis.Analysis;
+import analysis.Collector;
 import repast.simphony.context.Context;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactoryFinder;
@@ -25,6 +27,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 	public int currentProcessId;
 	public HashMap<Node, Double> crashedNodes;
 	public Visualization vis;
+	public Collector coll;
 
 	@Override
 	public Context build(Context<Object> context) {
@@ -45,6 +48,9 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		
 		this.context = context;
 		
+		//DATA COLLECTION
+		this.coll = new Collector();
+		
 		//create processes
 		TreeSet<Integer> initialIds = new TreeSet<Integer>();
 		while(initialIds.size() < Configuration.INITIAL_NUMBER_OF_NODES) {
@@ -56,6 +62,12 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		System.out.println("Nodes: " + initialIds);
 		
 		Object[] idsArray = initialIds.toArray();
+		
+		//analysis: values lost with 50% crash
+		if(Analysis.VALUES_LOST) {
+			coll.computeLostValuesCount(idsArray, 50);
+		}
+		
 		for(int i = 0; i < idsArray.length; i++) {
 			int currId = (int) idsArray[i]; //node id
 			//compute node successor
