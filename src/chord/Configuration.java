@@ -12,6 +12,7 @@ public class Configuration {
 	public static int AVG_STABILIZE_INTERVAL;
 	public static int AVG_FIX_FINGERS_INTERVAL;
 	public static int REQUEST_TIMEOUT_THRESHOLD;
+	public static int VISUALIZATION_TIMEOUT_SHOWTIME;
 	
 	public static void load() {
 		Parameters p = RunEnvironment.getInstance().getParameters();
@@ -23,5 +24,6 @@ public class Configuration {
 		Configuration.AVG_STABILIZE_INTERVAL = p.getInteger("avg_stabilize_interval");
 		Configuration.AVG_FIX_FINGERS_INTERVAL = p.getInteger("avg_fix_fingers_interval");
 		Configuration.REQUEST_TIMEOUT_THRESHOLD = p.getInteger("request_timeout_threshold");
+		Configuration.VISUALIZATION_TIMEOUT_SHOWTIME = p.getInteger("visualization_timeout_showtime");
 	}
 }

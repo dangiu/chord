@@ -96,6 +96,11 @@ public class Node {
 			this.lookup();
 		}
 		
+		// timeout debugging
+		if(this.active && Helper.getCurrentTick() == 10001 && this.id == 41) {
+			this.lookup(1);
+		}
+		
 		
 		//check if the node wants to perform some operations (e.g. join/lookup/leave)
 		
@@ -263,6 +268,14 @@ public class Node {
 			while(it2.hasNext()) {
 				Request r = it2.next();
 				if((Helper.getCurrentTick() - r.getCreationTick()) > Configuration.REQUEST_TIMEOUT_THRESHOLD) {
+					//visualization: check if timed out request is being visualized
+					if(r.getQueryId() == this.vis.getCurrentVisualizedQuery()) {
+						this.visQueryTimeout = true;
+						this.visQueryTimeoutTick = Helper.getCurrentTick();
+						//reset visualization in order to visualize new query
+						this.vis.notifyQueryCompleted(r.getQueryId());
+					}
+					
 					//request is timed out, remove it
 					it2.remove();
 					
