@@ -114,7 +114,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 	 * - generation of lookup requests
 	 */
 	public void supervisor() {
-		if(Helper.getCurrentTick() < 1000)
+		if(Helper.getCurrentTick() < 100)
 			//at the beginning, wait for the network to stabilize
 			//before performing any operation
 			return;
