@@ -1,11 +1,19 @@
 package chord;
 
+
 import java.util.HashMap;
 import java.util.TreeSet;
 
 import repast.simphony.context.Context;
+import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
+import repast.simphony.context.space.continuous.ContinuousSpaceFactoryFinder;
+import repast.simphony.context.space.graph.NetworkBuilder;
 import repast.simphony.dataLoader.ContextBuilder;
 import repast.simphony.random.RandomHelper;
+import repast.simphony.space.continuous.ContinuousSpace;
+import repast.simphony.space.graph.Network;
+import visualization.ChordSpaceAdder;
+import visualization.Visualization;
 
 public class ChordBuilder implements ContextBuilder<Object> {
 	
@@ -18,6 +26,16 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		context.setId("chord");
 		//load parameters from repast simulator
 		Configuration.load();
+		
+		//VISUALIZATION
+		//create projections
+		NetworkBuilder<Object> builder = new NetworkBuilder("node_network", context, true);
+		Network<Object> network = builder.buildNetwork();
+		ContinuousSpaceFactory spaceFactory = ContinuousSpaceFactoryFinder.createContinuousSpaceFactory(new HashMap<>());
+		ContinuousSpace<Object> space = spaceFactory.createContinuousSpace("space", context, new ChordSpaceAdder<Object>(), new repast.simphony.space.continuous.WrapAroundBorders(), 20, 20);
+		Visualization vis = new Visualization(network, context);
+		context.add(vis);
+		
 				
 		unsubscribedProcesses = new HashMap<>();
 		
@@ -57,7 +75,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 			}
 			successors[0] = currSucc;
 			
-			Node currNode = new Node(currId, currFingerTable, -1, successors, true);
+			Node currNode = new Node(currId, currFingerTable, -1, successors, true, vis);
 			context.add(currNode);
 		}
 		
@@ -70,7 +88,10 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		for(int j = 0; j < ss.length; j++) {
 			ss[j] = -1;
 		}
-		Node sleepingNode = new Node(0, ft, -1, ss, false);
+		
+		
+		
+		Node sleepingNode = new Node(0, ft, -1, ss, false, vis);
 		context.add(sleepingNode);
 		
 		

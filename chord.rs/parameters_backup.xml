@@ -24,6 +24,12 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
+				<parameter name="visualization_timeout_showtime" displayName="Vis 1 - Timeout Showtime" type="int" 
+						defaultValue="1" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
 				<parameter name="synchronous_mode" displayName="3 - Synchronous Mode" type="boolean" 
 						defaultValue="true" 
 						isReadOnly="false" 

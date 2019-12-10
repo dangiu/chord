@@ -10,7 +10,8 @@ public abstract class Request {
 		STABILIZE1,
 		STABILIZE2,
 		FIX_FINGER,
-		PING
+		PING,
+		LOOKUP
 	};
 	
 	private double creationTick;
