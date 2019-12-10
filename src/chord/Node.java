@@ -751,23 +751,29 @@ public class Node {
 		//update visualization
 		this.vis.notifyNewQuery(queryId, this.id);
 		
+		//create loockup request
 		LookupRequest lr = new LookupRequest(Helper.getCurrentTick(), queryId, this.id, key);
 		
-		ArrayList<Request> currentList = this.suspendedRequests.get(queryId);
-		//if not existent, initialize empty list
-		if(currentList == null) {
-			//initialize empty list for that queryId, insert request, update issuedRequests
-			currentList = new ArrayList<Request>();
+		if(Helper.belongs(key, this.predecessor, false, this.id, true)) {
+			//I am the node that holds the key, lookup already completed
+			this.resumeLookup(lr, this.id);
+		} else {			
+			ArrayList<Request> currentList = this.suspendedRequests.get(queryId);
+			//if not existent, initialize empty list
+			if(currentList == null) {
+				//initialize empty list for that queryId, insert request, update issuedRequests
+				currentList = new ArrayList<Request>();
+			}
+			//add request at the end of the list
+			currentList.add(currentList.size(), lr);
+			
+			//update issuedRequests
+			this.suspendedRequests.put(queryId, currentList);
+			
+			//create and send FindSuccessorMessage (perform local call to find_successor())
+			FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, key);
+			this.send(fsm, this.id); //call is local, the message is sent to myself
 		}
-		//add request at the end of the list
-		currentList.add(currentList.size(), lr);
-		
-		//update issuedRequests
-		this.suspendedRequests.put(queryId, currentList);
-		
-		//create and send FindSuccessorMessage (perform local call to find_successor())
-		FindSuccessorMessage fsm = new FindSuccessorMessage(queryId, key);
-		this.send(fsm, this.id); //call is local, the message is sent to myself
 	}
 	
 	/**
