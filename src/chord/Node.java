@@ -79,29 +79,7 @@ public class Node {
 	}
 	
 	@ScheduledMethod(start=1 , interval=1)
-	public void step() {
-		
-		/*
-		// DEBUGGING PURPOSES
-		if(!this.active && Helper.getCurrentTick() == 2000 & this.id == 0) {
-			this.join(228); //node id must exist, use seed: 525.425.337
-		}
-		
-		if(this.active && Helper.getCurrentTick() == 10000 && this.id == 0) {
-			this.crash();
-		}
-		
-		// lookup debugging
-		if(this.active && Helper.getCurrentTick() == 3000 && this.id == 0) {
-			this.lookup();
-		}
-		
-		// timeout debugging
-		if(this.active && Helper.getCurrentTick() == 10001 && this.id == 41) {
-			this.lookup(1);
-		}
-		*/
-		
+	public void step() {		
 		if(this.active) {
 			//check if stabilize must be executed
 			//this must be done before the message processing phase, since this method can generate messages that must be processed in the current tick
@@ -232,8 +210,8 @@ public class Node {
 				}
 			}
 				
-			
-			target.appendMessage(m);
+			if(target != null)	//target might be crashed
+				target.appendMessage(m);
 		}
 	}
 	
@@ -642,7 +620,12 @@ public class Node {
 			this.suspendedRequests.put(queryId, requests);
 			//send message to get the predecessor of our successor
 			PredecessorMessage pm = new PredecessorMessage(queryId);
-			this.send(pm, successors[0]);
+			if(successors[0] == -1) {
+				//all our successors crashed, we are isolated
+				this.crash();
+			} else {
+				this.send(pm, successors[0]);
+			}
 		}
 	}
 	
@@ -749,6 +732,10 @@ public class Node {
 		}
 		//reset predecessor
 		this.predecessor = -1;
+		
+		//update visualization in case I am originator of current visualized query
+		if(this.vis.getCurrentOriginator() == this.id)
+			this.vis.resetVisualizedQuery();
 	}
 	
 	/**
