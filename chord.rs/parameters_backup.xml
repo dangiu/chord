@@ -1,6 +1,48 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <parameters>
-					<parameter name="randomSeed" displayName="Default Random Seed" type="int" 
+					<parameter name="visualization_crashed_showtime" displayName="Vis 2 - Crashed Nodes Showtime" type="int" 
+						defaultValue="1000" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="avg_stabilize_interval" displayName="6 - Average Stabilize Interval" type="int" 
+						defaultValue="30" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="synchronous_mode" displayName="3 - Synchronous Mode" type="boolean" 
+						defaultValue="true" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$BooleanConverter"
+									
+		/>
+				<parameter name="lookup_probability" displayName="A2 - Lookup Probability" type="double" 
+						defaultValue="0.2" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+									
+		/>
+				<parameter name="successors_size" displayName="5 - Successors List size" type="int" 
+						defaultValue="5" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="join_probability" displayName="A1 - Join Probability" type="double" 
+						defaultValue="0.001" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
+									
+		/>
+				<parameter name="avg_fix_fingers_interval" displayName="7 - Average Fix Fingers Interval" type="int" 
+						defaultValue="30" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="randomSeed" displayName="Default Random Seed" type="int" 
 						defaultValue="__NULL__"
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
@@ -13,13 +55,13 @@
 									
 		/>
 				<parameter name="initial_number_of_nodes" displayName="2 - Initial Number of Nodes" type="int" 
-						defaultValue="3" 
+						defaultValue="10" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="avg_stabilize_interval" displayName="6 - Average Stabilize Interval" type="int" 
-						defaultValue="30" 
+				<parameter name="min_number_of_nodes" displayName="1a - Min Number of Nodes" type="int" 
+						defaultValue="5" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
@@ -30,26 +72,14 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
-				<parameter name="synchronous_mode" displayName="3 - Synchronous Mode" type="boolean" 
-						defaultValue="true" 
+				<parameter name="crash_probability" displayName="9 - Crash Probability" type="double" 
+						defaultValue="0.001" 
 						isReadOnly="false" 
-						converter="repast.simphony.parameter.StringConverterFactory$BooleanConverter"
+						converter="repast.simphony.parameter.StringConverterFactory$DoubleConverter"
 									
 		/>
 				<parameter name="max_transmission_delay" displayName="4 - Max Transmission Delay" type="int" 
 						defaultValue="10" 
-						isReadOnly="false" 
-						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
-									
-		/>
-				<parameter name="successors_size" displayName="5 - Successors List size" type="int" 
-						defaultValue="5" 
-						isReadOnly="false" 
-						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
-									
-		/>
-				<parameter name="avg_fix_fingers_interval" displayName="7 - Average Fix Fingers Interval" type="int" 
-						defaultValue="30" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									

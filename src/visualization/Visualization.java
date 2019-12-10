@@ -127,4 +127,9 @@ public class Visualization {
 			// some process is removed from the context, I can not show that edge
 		}
 	}
+
+	public void resetVisualizedQuery() {
+		this.currentQuery = null;
+		this.currentOriginator = -1;
+	}
 }
