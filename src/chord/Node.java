@@ -145,6 +145,7 @@ public class Node {
 					UUID queryId = fsrm.getQueryId();
 					ArrayList<Request> requests = this.suspendedRequests.get(queryId);
 					if(requests != null) {
+						if(requests.size() == 0) break;
 						Request joinRequest = requests.remove(requests.size() - 1);
 						if(joinRequest.getType() == RequestType.JOIN) {
 							this.resumeJoin((JoinRequest) joinRequest, fsrm.getFsId());
@@ -316,6 +317,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
+			if(requests.size() == 0) return;
 			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.FIND_SUCCESSOR) {
@@ -345,6 +347,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
+			if(requests.size() == 0) return;
 			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.STABILIZE1) {
@@ -387,6 +390,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
+			if(requests.size() == 0) return;
 			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.JOIN) {
@@ -445,6 +449,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
+			if(requests.size() == 0) return;
 			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.FIND_SUCCESSOR) {
@@ -521,6 +526,7 @@ public class Node {
 		if(requests != null) {
 			//get last request for that queryId and resume correct method execution
 			//while passing context saved in request table and data from message
+			if(requests.size() == 0) return;
 			Request relatedRequest = requests.remove(requests.size() - 1);
 			
 			if(relatedRequest.getType() == RequestType.FIND_PREDECESSOR) {
