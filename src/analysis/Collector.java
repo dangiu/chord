@@ -2,6 +2,7 @@ package analysis;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.TreeMap;
 
 import chord.Configuration;
 import repast.simphony.random.RandomHelper;
@@ -14,15 +15,15 @@ import repast.simphony.random.RandomHelper;
  */
 public class Collector {
 	
-	private int valuesLostCount;
+	private TreeMap<Integer, Integer> lostValuesPerRun;
 	
 	public Collector() {
 		//initialize structures needed to collect data
-		this.valuesLostCount = 0;
+		lostValuesPerRun = new TreeMap<Integer, Integer>();
 	}
 	
-	public void computeLostValuesCount(Object[] arr, int percentageCrashed) {
-		this.valuesLostCount = 0;
+	public int computeLostValuesCount(Object[] arr, int percentageCrashed) {
+		int valuesLostCount = 0;
 		
 		//create array of integers
 		int[] ids = new int[arr.length];
@@ -63,20 +64,40 @@ public class Collector {
 				int part1 = curr;
 				int part2 = Configuration.MAX_NUMBER_OF_NODES - ids[ids.length - 1];
 				int tempLost = part1 + part2;
-				this.valuesLostCount = this.valuesLostCount + tempLost;
+				valuesLostCount = valuesLostCount + tempLost;
 			} else {
 				int pred = -1;
 				for(int i = 0; i < ids.length - 1; i++) {
 					if(ids[i + 1] == curr) pred = ids[i];
 				}
 				int tempLost = curr - pred;
-				this.valuesLostCount = this.valuesLostCount + tempLost;
+				valuesLostCount = valuesLostCount + tempLost;
 			}
 		}
+		return valuesLostCount;
 	}
 	
-	public int getLostValuesCount() {
-		return this.valuesLostCount;
+	public void nofifyLostValue(int run, int currRunLoss) {
+		this.lostValuesPerRun.put(run, currRunLoss);		
 	}
+	
+	public TreeMap<Integer, Integer> getLostValues() {
+		return this.lostValuesPerRun;
+	}
+	
+	public float getLossProbability() {
+		int runCount = this.lostValuesPerRun.size();
+		int failCount = 0;
+		//count number of failed runs
+		Iterator<Integer> it = this.lostValuesPerRun.values().iterator();
+		while(it.hasNext()) {
+			int currValue = it.next();
+			if(currValue > 0)
+				failCount++;
+		}
+		float lossProb = (float) failCount / (float) runCount;
+		return lossProb;
+	}
+	
 	
 }

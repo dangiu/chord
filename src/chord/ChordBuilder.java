@@ -8,6 +8,7 @@ import java.util.TreeSet;
 
 import analysis.Analysis;
 import analysis.Collector;
+import analysis.Analysis.AnalysisType;
 import repast.simphony.context.Context;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactory;
 import repast.simphony.context.space.continuous.ContinuousSpaceFactoryFinder;
@@ -50,6 +51,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		
 		//DATA COLLECTION
 		this.coll = new Collector();
+		context.add(coll);
 		
 		//create processes
 		TreeSet<Integer> initialIds = new TreeSet<Integer>();
@@ -63,10 +65,29 @@ public class ChordBuilder implements ContextBuilder<Object> {
 		
 		Object[] idsArray = initialIds.toArray();
 		
-		//analysis: values lost with 50% crash
-		if(Analysis.VALUES_LOST) {
-			coll.computeLostValuesCount(idsArray, 50);
+		/*
+		 * Analysis 1: values lost with 50% crash
+		 */
+		if(Analysis.isActive(AnalysisType.VALUES_LOST)) {
+			int percentage = Analysis.CRASHED_PERCENTAGE;			
+			int currRun = 0;	
+			while(currRun < 100000) { //test over 100000 runs
+				//generate ids
+				//create processes
+				TreeSet<Integer> ii = new TreeSet<Integer>();
+				while(ii.size() < Configuration.INITIAL_NUMBER_OF_NODES) {
+					int newId = RandomHelper.nextIntFromTo(0, Configuration.MAX_NUMBER_OF_NODES - 1);
+					ii.add(newId);
+				}
+				Object[] idsArr = ii.toArray();
+				int currRunLoss = coll.computeLostValuesCount(idsArr, percentage);
+				coll.nofifyLostValue(currRun, currRunLoss);
+				currRun++;
+			}			
 		}
+		/*
+		 * End of analysis 1
+		 */
 		
 		for(int i = 0; i < idsArray.length; i++) {
 			int currId = (int) idsArray[i]; //node id
@@ -94,24 +115,6 @@ public class ChordBuilder implements ContextBuilder<Object> {
 			Node currNode = new Node(currId, currFingerTable, -1, successors, true, vis);
 			context.add(currNode);
 		}
-		
-		
-		/*
-		//OLD DEBUG STUFF
-		//add extra node (id 0) that will join the network later
-		int[] ft = new int[Helper.computeFingerTableSize(Configuration.MAX_NUMBER_OF_NODES)];
-		for(int j = 0; j < ft.length; j++) {
-			ft[j] = -1;
-		}
-		int[] ss = new int[Configuration.SUCCESSORS_SIZE];
-		for(int j = 0; j < ss.length; j++) {
-			ss[j] = -1;
-		}
-		
-		
-		Node sleepingNode = new Node(0, ft, -1, ss, false, vis);
-		context.add(sleepingNode);
-		*/
 		
 		//schedule the exectution of the method supervior() of ChordBuilder
 		RunEnvironment.getInstance().getCurrentSchedule().schedule(ScheduleParameters.createRepeating(1, 1, ScheduleParameters.LAST_PRIORITY), ()-> supervisor());

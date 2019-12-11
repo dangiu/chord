@@ -1,22 +1,22 @@
 package analysis;
 
 import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
+import chord.Configuration;
 import repast.simphony.data2.AggregateDataSource;
 
 /**
- * This data source collects the data about the number of vales lost due to crash
+ * This data source collects the data about the probability of losing
+ * values computed in a given amount of runs, with a percentage of nodes crashing
  * Must be called only once at the end of the run
  * @author danie
  *
  */
-public class ValuesLostDataSource implements AggregateDataSource {
+public class ProbLossDataSource implements AggregateDataSource {
 
 	@Override
 	public String getId() {
-		return "values_lost";
+		return "prob_loss";
 	}
 
 	@Override
@@ -35,19 +35,18 @@ public class ValuesLostDataSource implements AggregateDataSource {
 		Iterator<?> it = objs.iterator();
 		if(it.hasNext()) {
 			Collector c = (Collector) it.next();
-			TreeMap<Integer, Integer> tm = c.getLostValues();
+			float probOfLoss = c.getLossProbability();
+			int nodes = Configuration.INITIAL_NUMBER_OF_NODES;
+			int succSize = Configuration.SUCCESSORS_SIZE;
+			int failedPercentage = Analysis.CRASHED_PERCENTAGE;
 			String result = "";
 			result += "\n";
-			result += "runIndex, lostValues\n";
-			Iterator<Entry<Integer, Integer>> it2 = tm.entrySet().iterator();
-			while(it2.hasNext()) {
-				Entry<Integer, Integer> currEntry = it2.next();
-				result += currEntry.getKey() + "," + currEntry.getValue() + "\n";
-			}
+			result += "nodes, failedPercentage, succSize, probOfLoss\n";
+			result += nodes + "," + failedPercentage + "," + succSize + "," + probOfLoss + "\n";
 			return result;
 		}
 		
-		return "Error in getting ValuesLostData";
+		return "Error in getting ProbLossData";
 	}
 
 	@Override
