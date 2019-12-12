@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import chord.Configuration;
 import repast.simphony.random.RandomHelper;
-import repast.simphony.relogo.ide.intf.NetLogoInterfaceParser.number_return;
 
 /**
  * Agent that supports the operation of data collection needed to perform analysis of the protocol
@@ -20,13 +19,20 @@ public class Collector {
 	
 	private TreeMap<Integer, Integer> lostValuesPerRun;
 	private HashMap<UUID, HashSet<Integer>> lookupPathLength; //used to store information about lookup in progress
-	private HashMap<UUID, HashSet<Integer>> lookupPathLengthStable; //used to store information about lookup terminated 
+	private HashMap<UUID, HashSet<Integer>> lookupPathLengthStable; //used to store information about lookup terminated
+	
+	private HashSet<UUID> lookupInProgress;	//used to store information about lookup fail due to churn rate
+	private HashSet<UUID> lookupFailed;	//used to store information about lookup fail due to churn rate
+	private HashSet<UUID> lookupCompleted;	//used to store information about lookup fail due to churn rate
 	
 	public Collector() {
 		//initialize structures needed to collect data
 		lostValuesPerRun = new TreeMap<Integer, Integer>();
 		lookupPathLength = new HashMap<UUID, HashSet<Integer>>();
 		lookupPathLengthStable = new HashMap<UUID, HashSet<Integer>>();
+		lookupInProgress = new HashSet<UUID>();
+		lookupFailed = new HashSet<UUID>();
+		lookupCompleted = new HashSet<UUID>();
 	}
 	
 	public int computeLostValuesCount(Object[] arr, int percentageCrashed) {
@@ -84,7 +90,7 @@ public class Collector {
 		return valuesLostCount;
 	}
 	
-	public void nofifyLostValue(int run, int currRunLoss) {
+	public void notifyLostValue(int run, int currRunLoss) {
 		this.lostValuesPerRun.put(run, currRunLoss);		
 	}
 	
@@ -92,6 +98,10 @@ public class Collector {
 		return this.lostValuesPerRun;
 	}
 	
+	/**
+	 * Computes the probability of loosing values given the data collected during the simulation
+	 * @return
+	 */
 	public float getLossProbability() {
 		int runCount = this.lostValuesPerRun.size();
 		int failCount = 0;
@@ -121,7 +131,7 @@ public class Collector {
 	}
 	
 	/**
-	 * Nofifies about a message received that might be used for the prupose
+	 * Notifies about a message received that might be used for the prupose
 	 * of performing a lookup, if it is, store the fact that this
 	 * node is part of the lookup process
 	 * @param queryId
@@ -136,6 +146,10 @@ public class Collector {
 		}
 	}
 	
+	/**
+	 * Notifies about the end of a lookup and computes the path size
+	 * @param queryId
+	 */
 	public void notifyLookupOver(UUID queryId) {
 		HashSet<Integer> nodes = this.lookupPathLength.get(queryId);
 		if(nodes != null) {
@@ -203,5 +217,40 @@ public class Collector {
 		}
 		return lenOcc;
 	}
-		
+	
+	/**
+	 * Count lookups currently in the system
+	 * @param queryId
+	 */
+	public void notifyLookupInProgress(UUID queryId) {
+		this.lookupInProgress.add(queryId);
+	}
+	
+	/**
+	 * Count lookups successfully completed
+	 * @param queryId
+	 */
+	public void notifyLookupCompleted(UUID queryId) {
+		this.lookupInProgress.remove(queryId);
+		this.lookupCompleted.add(queryId);
+	}
+	
+	/**
+	 * Count lookups failed
+	 * @param queryId
+	 */
+	public void notifyLookupFailed(UUID queryId) {
+		this.lookupInProgress.remove(queryId);
+		this.lookupFailed.add(queryId);
+	}
+	
+	/**
+	 * Computes the fraction of lookup failed over all total lookup performed (which are not in progress anymore)
+	 * @return
+	 */
+	public double getFractionOfFailedLookup() {
+		double failedSize = this.lookupFailed.size();
+		double totalSize = failedSize + this.lookupCompleted.size();
+		return failedSize/totalSize;
+	}
 }

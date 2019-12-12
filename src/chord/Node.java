@@ -271,6 +271,13 @@ public class Node {
 					//request is timed out, remove it
 					it2.remove();
 					
+					//analysis 5: churn rate vs lookup
+					if(Analysis.isActive(AnalysisType.CHURN_LOOKUP)) {
+						if(r.getType() == Request.RequestType.LOOKUP) {
+							this.coll.notifyLookupFailed(r.getQueryId());
+						}
+					}
+					
 					//Stabilize1Request, Stabilize2Request, PingRequest
 					//tell us when a node crashed and needs to be removed
 					//from successors, fingerTable or predecessor
@@ -772,6 +779,11 @@ public class Node {
 			this.coll.notifyLookupGeneration(queryId, this.id);
 		}
 		
+		//analysis 5: churn rate vs lookup
+		if(Analysis.isActive(AnalysisType.CHURN_LOOKUP)) {
+			this.coll.notifyLookupInProgress(queryId);
+		}
+		
 		//update visualization
 		this.vis.notifyNewQuery(queryId, this.id);
 		
@@ -818,6 +830,11 @@ public class Node {
 		//analysis 3: path length
 		if(Analysis.isActive(AnalysisType.PATH_LENGTH)) {
 			this.coll.notifyLookupOver(relatedRequest.getQueryId());
+		}
+		
+		//analysis 5: churn rate vs lookup
+		if(Analysis.isActive(AnalysisType.CHURN_LOOKUP)) {
+			this.coll.notifyLookupCompleted(relatedRequest.getQueryId());
 		}
 	}
 	

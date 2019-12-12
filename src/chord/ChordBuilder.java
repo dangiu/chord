@@ -81,7 +81,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 				}
 				Object[] idsArr = ii.toArray();
 				int currRunLoss = coll.computeLostValuesCount(idsArr, percentage);
-				coll.nofifyLostValue(currRun, currRunLoss);
+				coll.notifyLostValue(currRun, currRunLoss);
 				currRun++;
 			}			
 		}
