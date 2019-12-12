@@ -112,7 +112,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 			}
 			successors[0] = currSucc;
 			
-			Node currNode = new Node(currId, currFingerTable, -1, successors, true, vis);
+			Node currNode = new Node(currId, currFingerTable, -1, successors, true, vis, this.coll);
 			context.add(currNode);
 		}
 		
@@ -176,7 +176,7 @@ public class ChordBuilder implements ContextBuilder<Object> {
 							for(int j = 0; j < ss.length; j++) {
 								ss[j] = -1;
 							}
-							Node newNode = new Node(newId, ft, -1, ss, false, vis);
+							Node newNode = new Node(newId, ft, -1, ss, false, vis, this.coll);
 							//add node to context
 							this.context.add(newNode);
 							//tell node to join

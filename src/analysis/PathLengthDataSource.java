@@ -6,17 +6,17 @@ import chord.Configuration;
 import repast.simphony.data2.AggregateDataSource;
 
 /**
- * This data source collects the data about the probability of losing
- * values computed in a given amount of runs, with a percentage of nodes crashing
- * Must be called only once at the end of the run
+ * This data source collects the data the length
+ * of a path for a lookup request
+ * Should only be called at the end of a run
  * @author danie
  *
  */
-public class ProbLossDataSource implements AggregateDataSource {
+public class PathLengthDataSource implements AggregateDataSource {
 
 	@Override
 	public String getId() {
-		return "prob_loss";
+		return "path_len";
 	}
 
 	@Override
@@ -35,18 +35,18 @@ public class ProbLossDataSource implements AggregateDataSource {
 		Iterator<?> it = objs.iterator();
 		if(it.hasNext()) {
 			Collector c = (Collector) it.next();
-			float probOfLoss = c.getLossProbability();
 			int nodes = Configuration.INITIAL_NUMBER_OF_NODES;
-			int succSize = Configuration.SUCCESSORS_SIZE;
-			int failedPercentage = Analysis.CRASHED_PERCENTAGE;
+			double avgPathLen = c.getAvgLookupPathLength();
+			double bestPathLen = c.getBestLookupPathLength();
+			double worstPathLen = c.getWorstLookupPathLength();
 			String result = "";
 			result += "\n";
-			result += "nodes,failedPercentage,succSize,probOfLoss\n";
-			result += nodes + "," + failedPercentage + "," + succSize + "," + probOfLoss + "\n";
+			result += "nodes,avgPathLen,bestPathLen,worstPathLen\n";
+			result += nodes + "," + avgPathLen + "," + bestPathLen + "," + worstPathLen + "\n";
 			return result;
 		}
 		
-		return "Error in getting ProbLossData";
+		return "Error in getting PathLengthData";
 	}
 
 	@Override

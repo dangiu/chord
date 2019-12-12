@@ -38,7 +38,7 @@ public class ValuesLostDataSource implements AggregateDataSource {
 			TreeMap<Integer, Integer> tm = c.getLostValues();
 			String result = "";
 			result += "\n";
-			result += "runIndex, lostValues\n";
+			result += "runIndex,lostValues\n";
 			Iterator<Entry<Integer, Integer>> it2 = tm.entrySet().iterator();
 			while(it2.hasNext()) {
 				Entry<Integer, Integer> currEntry = it2.next();

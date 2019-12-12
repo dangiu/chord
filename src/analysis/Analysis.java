@@ -6,7 +6,7 @@ package analysis;
  *
  */
 public class Analysis {
-	public enum AnalysisType {NONE, VALUES_LOST};
+	public enum AnalysisType {NONE, VALUES_LOST, PATH_LENGTH};
 	public static final AnalysisType ACTIVE = AnalysisType.NONE;
 	
 	//parameters for some specific analysis
