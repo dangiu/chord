@@ -7,6 +7,9 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import analysis.Analysis;
+import analysis.Collector;
+import analysis.Analysis.AnalysisType;
 import messages.ClosestPrecedingFingerMessage;
 import messages.ClosestPrecedingFingerReplyMessage;
 import messages.FindPredecessorMessage;
@@ -50,8 +53,11 @@ public class Node {
 	public boolean visQueryTimeout;
 	public double visQueryTimeoutTick;
 	
+	//attributes for data collection
+	public Collector coll;
 	
-	public Node(int id, int[] fingerTable, int predecessor, int[] successors, boolean active, Visualization vis) {
+	
+	public Node(int id, int[] fingerTable, int predecessor, int[] successors, boolean active, Visualization vis, Collector coll) {
 		this.messageQueue = new ConcurrentLinkedQueue<Message>();
 		this.suspendedRequests = new HashMap<UUID, ArrayList<Request>>();
 		
@@ -67,7 +73,10 @@ public class Node {
 		//visualization attributes
 		this.vis = vis;
 		this.visQueryTimeout = false;
-		this.visQueryTimeoutTick = -1;		
+		this.visQueryTimeoutTick = -1;	
+		
+		//data collection
+		this.coll = coll;
 	}
 	
 	public int getId() {
@@ -226,6 +235,12 @@ public class Node {
 			Message m = it.next();
 			if(m.getProcessingTick() <= Helper.getCurrentTick()) { // check if message must be processed this tick
 				it.remove();
+				
+				//analysis 3: path length
+				if(Analysis.isActive(AnalysisType.PATH_LENGTH)) {
+					this.coll.notifyPossibleLookup(m.getQueryId(), this.id);
+				}
+				
 				return m;
 			}
 		}
@@ -752,6 +767,11 @@ public class Node {
 		//suspend execution and store LookupRequest
 		UUID queryId = UUID.randomUUID();
 		
+		//analysis 3: path length
+		if(Analysis.isActive(AnalysisType.PATH_LENGTH)) {
+			this.coll.notifyLookupGeneration(queryId, this.id);
+		}
+		
 		//update visualization
 		this.vis.notifyNewQuery(queryId, this.id);
 		
@@ -794,6 +814,11 @@ public class Node {
 		//fsId is the id of the node that holds the key we are looking for (first successor of key)
 		//update visualization
 		this.vis.notifyQueryCompleted(relatedRequest.getQueryId());
+		
+		//analysis 3: path length
+		if(Analysis.isActive(AnalysisType.PATH_LENGTH)) {
+			this.coll.notifyLookupOver(relatedRequest.getQueryId());
+		}
 	}
 	
 	public int[] getSuccs() {

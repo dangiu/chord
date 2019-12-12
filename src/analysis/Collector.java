@@ -1,11 +1,14 @@
 package analysis;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import chord.Configuration;
 import repast.simphony.random.RandomHelper;
+import repast.simphony.relogo.ide.intf.NetLogoInterfaceParser.number_return;
 
 /**
  * Agent that supports the operation of data collection needed to perform analysis of the protocol
@@ -16,10 +19,14 @@ import repast.simphony.random.RandomHelper;
 public class Collector {
 	
 	private TreeMap<Integer, Integer> lostValuesPerRun;
+	private HashMap<UUID, HashSet<Integer>> lookupPathLength; //used to store information about lookup in progress
+	private HashMap<UUID, HashSet<Integer>> lookupPathLengthStable; //used to store information about lookup terminated 
 	
 	public Collector() {
 		//initialize structures needed to collect data
 		lostValuesPerRun = new TreeMap<Integer, Integer>();
+		lookupPathLength = new HashMap<UUID, HashSet<Integer>>();
+		lookupPathLengthStable = new HashMap<UUID, HashSet<Integer>>();
 	}
 	
 	public int computeLostValuesCount(Object[] arr, int percentageCrashed) {
@@ -99,5 +106,102 @@ public class Collector {
 		return lossProb;
 	}
 	
+	/**
+	 * Store the fact that a new lookup query was generated
+	 * @param queryId
+	 * @param nodeId
+	 */
+	public void notifyLookupGeneration(UUID queryId, int nodeId) {
+		HashSet<Integer> nodes = this.lookupPathLength.get(queryId);
+		if(nodes == null) {
+			nodes = new HashSet<Integer>();
+		}
+		nodes.add(nodeId);
+		this.lookupPathLength.put(queryId, nodes);
+	}
 	
+	/**
+	 * Nofifies about a message received that might be used for the prupose
+	 * of performing a lookup, if it is, store the fact that this
+	 * node is part of the lookup process
+	 * @param queryId
+	 * @param nodeId
+	 */
+	public void notifyPossibleLookup(UUID queryId, int nodeId) {
+		HashSet<Integer> nodes = this.lookupPathLength.get(queryId);
+		if(nodes != null) {
+			//queryId is part of a lookup process, add this node to the list
+			nodes.add(nodeId);
+			this.lookupPathLength.put(queryId, nodes);
+		}
+	}
+	
+	public void notifyLookupOver(UUID queryId) {
+		HashSet<Integer> nodes = this.lookupPathLength.get(queryId);
+		if(nodes != null) {
+			this.lookupPathLengthStable.put(queryId, nodes);
+		}
+	}
+	
+	/**
+	 * Compute the average path length for a lookup request
+	 * @return average path length
+	 */
+	public double getAvgLookupPathLength() {
+		Iterator<HashSet<Integer>> it = this.lookupPathLengthStable.values().iterator();
+		double avgPathLength = 0;
+		while(it.hasNext()) {
+			HashSet<Integer> currPath = it.next();
+			avgPathLength += currPath.size();
+		}
+		avgPathLength = avgPathLength / this.lookupPathLengthStable.size();
+		return avgPathLength;
+	}
+	
+	/**
+	 * Compute the shortest path length for a lookup request
+	 * @return shortest path length
+	 */
+	public double getBestLookupPathLength() {
+		Iterator<HashSet<Integer>> it = this.lookupPathLengthStable.values().iterator();
+		double bestPathLength = Double.MAX_VALUE;
+		while(it.hasNext()) {
+			HashSet<Integer> currPath = it.next();
+			if(currPath.size() < bestPathLength)
+				bestPathLength = currPath.size();
+		}
+		return bestPathLength;
+	}
+	
+	/**
+	 * Compute the longest path length for a lookup request
+	 * @return longest path length
+	 */
+	public double getWorstLookupPathLength() {
+		Iterator<HashSet<Integer>> it = this.lookupPathLengthStable.values().iterator();
+		double worstPathLength = 0;
+		while(it.hasNext()) {
+			HashSet<Integer> currPath = it.next();
+			if(currPath.size() > worstPathLength)
+				worstPathLength = currPath.size();
+		}
+		return worstPathLength;
+	}
+	
+	/**
+	 * Compute the number of occurrences of each possible path length size for lookup queries
+	 * @return
+	 */
+	public HashMap<Integer, Integer> getPathLengthOccurrences() {
+		HashMap<Integer, Integer> lenOcc = new HashMap<Integer, Integer>();
+		Iterator<HashSet<Integer>> it = this.lookupPathLengthStable.values().iterator();
+		while(it.hasNext()) {
+			HashSet<Integer> currPath = it.next();
+			int currPathSize = currPath.size();
+			int occ = lenOcc.getOrDefault(currPathSize, 0);
+			lenOcc.put(currPathSize, occ + 1);
+		}
+		return lenOcc;
+	}
+		
 }

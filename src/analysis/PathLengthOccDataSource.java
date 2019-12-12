@@ -1,22 +1,24 @@
 package analysis;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
 import chord.Configuration;
 import repast.simphony.data2.AggregateDataSource;
 
 /**
- * This data source collects the data about the probability of losing
- * values computed in a given amount of runs, with a percentage of nodes crashing
- * Must be called only once at the end of the run
+ * This data source collects the data about the number of occurrences
+ * of different path length during lookup requests
+ * Should only be called at the end of a run
  * @author danie
  *
  */
-public class ProbLossDataSource implements AggregateDataSource {
+public class PathLengthOccDataSource implements AggregateDataSource {
 
 	@Override
 	public String getId() {
-		return "prob_loss";
+		return "path_len_occ";
 	}
 
 	@Override
@@ -35,18 +37,21 @@ public class ProbLossDataSource implements AggregateDataSource {
 		Iterator<?> it = objs.iterator();
 		if(it.hasNext()) {
 			Collector c = (Collector) it.next();
-			float probOfLoss = c.getLossProbability();
 			int nodes = Configuration.INITIAL_NUMBER_OF_NODES;
-			int succSize = Configuration.SUCCESSORS_SIZE;
-			int failedPercentage = Analysis.CRASHED_PERCENTAGE;
+			HashMap<Integer, Integer> pathLenOcc = c.getPathLengthOccurrences();
 			String result = "";
 			result += "\n";
-			result += "nodes,failedPercentage,succSize,probOfLoss\n";
-			result += nodes + "," + failedPercentage + "," + succSize + "," + probOfLoss + "\n";
+			result += "nodes=" + nodes + "\n";
+			result += "patLen,occ\n";
+			Iterator<Entry<Integer, Integer>> pit = pathLenOcc.entrySet().iterator();
+			while(pit.hasNext()) {
+				Entry<Integer, Integer> e = pit.next();
+				result += e.getKey() + "," + e.getValue() + "\n";
+			}
 			return result;
 		}
 		
-		return "Error in getting ProbLossData";
+		return "Error in getting PathLengthOccData";
 	}
 
 	@Override
