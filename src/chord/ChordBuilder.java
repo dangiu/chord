@@ -2,6 +2,7 @@ package chord;
 
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
@@ -147,71 +148,67 @@ public class ChordBuilder implements ContextBuilder<Object> {
 
 		//possibly make new nodes join the network
 		if(RandomHelper.nextDouble() < Configuration.JOIN_PROBABILITY) {
-			boolean generated = false;
-			while(!generated) {
-				//take a random entry point
-				Iterator<Object> it = context.getRandomObjects(Node.class, 1).iterator();
-				if(it.hasNext()) {
-					Node entry = (Node)it.next();
-					if(entry.isActive()) {
-						//generate random id for new node
-						int newId = RandomHelper.nextIntFromTo(0, Configuration.MAX_NUMBER_OF_NODES - 1);
-						//check that newId is not already in the network
-						Iterator<Object> it2 = context.getObjects(Node.class).iterator();
-						boolean alreadyPresent = false;
-						while(it2.hasNext()) {
-							Node curr = (Node) it2.next();
-							if(curr.getId() == newId)
-								alreadyPresent = true;
-						}
-						if(!alreadyPresent) {
-							//actually create new node
-							//create node finger table
-							int[] ft = new int[Helper.computeFingerTableSize(Configuration.MAX_NUMBER_OF_NODES)];
-							for(int j = 0; j < ft.length; j++) {
-								ft[j] = -1;
-							}
-							//create node successors array
-							int[] ss = new int[Configuration.SUCCESSORS_SIZE];
-							for(int j = 0; j < ss.length; j++) {
-								ss[j] = -1;
-							}
-							Node newNode = new Node(newId, ft, -1, ss, false, vis, this.coll);
-							//add node to context
-							this.context.add(newNode);
-							//tell node to join
-							newNode.join(entry.getId());
-							//set boolean generated to true in order to end the process
-							generated = true;
-						}
+			HashSet<Integer> eligibleIds= new HashSet<Integer>();
+			//fill with all possible ids
+			for(int i = 0; i < Configuration.MAX_NUMBER_OF_NODES; i++)
+				eligibleIds.add(i);
+			//remove ids already used
+			Iterator<Object> nodeIt = context.getObjects(Node.class).iterator();
+			while(nodeIt.hasNext()) {
+				Node curr = (Node) nodeIt.next();
+				eligibleIds.remove(curr.getId());
+			}
+			//take random id from remaining
+			Object[] eligibleIdsArray = eligibleIds.toArray(); 
+			int randIndex = RandomHelper.nextIntFromTo(0, eligibleIdsArray.length - 1);
+			int newId = (int) eligibleIdsArray[randIndex];
+			
+			//take random entry point
+			Iterator<Object> randNodeIt = context.getRandomObjects(Node.class, context.size()).iterator();
+			while(randNodeIt.hasNext()) {
+				Node currRand = (Node) randNodeIt.next();
+				if(currRand.isActive()) {
+					//generate create new node from chosen id
+					//create node finger table
+					int[] ft = new int[Helper.computeFingerTableSize(Configuration.MAX_NUMBER_OF_NODES)];
+					for(int j = 0; j < ft.length; j++) {
+						ft[j] = -1;
 					}
+					//create node successors array
+					int[] ss = new int[Configuration.SUCCESSORS_SIZE];
+					for(int j = 0; j < ss.length; j++) {
+						ss[j] = -1;
+					}
+					Node newNode = new Node(newId, ft, -1, ss, false, vis, this.coll);
+					//add node to context
+					this.context.add(newNode);
+					//tell node to join
+					newNode.join(currRand.getId());
+					break; //don't repeat the cycle again, join was performed
 				}
 			}
 		}
 		
 		//possibly make existing nodes crash
 		if(RandomHelper.nextDouble() < Configuration.CRASH_PROBABILITY) {
-			boolean removed = false;
-			while(!removed) {
-				//take a random node
-				Iterator<Object> it = context.getRandomObjects(Node.class, 1).iterator();
-				if(it.hasNext()) {
-					Node target =  (Node)it.next();
-					if(target.isActive()) {
-						//count active nodes
-						Iterator<Object> it2 = context.getObjects(Node.class).iterator();
-						int count = 0;
-						while(it2.hasNext()) {
-							Node n = (Node) it2.next();
-							if(n.isActive())
-								count++;
-						}
-						if(count > Configuration.MIN_NUMBER_OF_NODES) {
-							target.crash();
-							this.crashedNodes.put(target, Helper.getCurrentTick());
-						}
-						removed = true;
-					}				
+			int activeNodeCount = 0;
+			//count number of active nodes
+			Iterator<Object> nodeIt = context.getObjects(Node.class).iterator();
+			while(nodeIt.hasNext()) {
+				Node curr = (Node) nodeIt.next();
+				if(curr.isActive())
+					activeNodeCount++;
+			}
+			if(activeNodeCount > Configuration.MIN_NUMBER_OF_NODES) {
+				//try to take a random active node and make it crash
+				Iterator<Object> randNodeIt = context.getRandomObjects(Node.class, context.size()).iterator();
+				while(randNodeIt.hasNext()) {
+					Node currRand = (Node) randNodeIt.next();
+					if(currRand.isActive()) {
+						currRand.crash();
+						this.crashedNodes.put(currRand, Helper.getCurrentTick());
+						break; //don't repeat the cycle again, otherwise we make all nodes crash
+					}
 				}
 			}
 		}

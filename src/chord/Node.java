@@ -142,6 +142,11 @@ public class Node {
 			//clean timed out requests
 			this.cleanTimedOutRequests();
 			
+			//check if become isolated
+			if(successors[0] == this.id || successors[0] == -1) {
+				this.crash();
+			}
+			
 		} else if(!this.active) {
 			//if node is inactive, but it's trying to join
 			//we need to check if our entry point has answered our query
@@ -505,6 +510,10 @@ public class Node {
 	}
 	
 	private void resumeFindPredecessor2(FindPredecessorRequest relatedRequest, int cpfId) {
+		if(relatedRequest.getNPrime() == cpfId) {
+			//special case where the node remained isolated and keeps looping forever
+			return; //just return therefore removeing request
+		}
 		//discovered closest finger, create new relatedRequest with new nPrime
 		//add it in the table and resuspend execution in order to ask for successor of the new nPrime
 		//this corresponds to beginning a new interation of the "while" loop in the pseudocode
@@ -634,7 +643,6 @@ public class Node {
 				}
 			}
 		}
-		
 		if(!stabilizeAlreadyInProgress) {
 			//start stabilize process
 			//ask our successor for it's predecessor and suspend execution
