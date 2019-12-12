@@ -13,6 +13,7 @@ public class Configuration {
 	public static int AVG_STABILIZE_INTERVAL;
 	public static int AVG_FIX_FINGERS_INTERVAL;
 	public static int REQUEST_TIMEOUT_THRESHOLD;
+	public static int STABILIZATION_TIMEOUT_THRESHOLD;
 	public static double CRASH_PROBABILITY;
 	public static double JOIN_PROBABILITY;
 	public static double LOOKUP_PROBABILITY;
@@ -30,6 +31,7 @@ public class Configuration {
 		Configuration.AVG_STABILIZE_INTERVAL = p.getInteger("avg_stabilize_interval");
 		Configuration.AVG_FIX_FINGERS_INTERVAL = p.getInteger("avg_fix_fingers_interval");
 		Configuration.REQUEST_TIMEOUT_THRESHOLD = p.getInteger("request_timeout_threshold");
+		Configuration.STABILIZATION_TIMEOUT_THRESHOLD = p.getInteger("stabilization_timeout_threshold");
 		Configuration.CRASH_PROBABILITY = p.getDouble("crash_probability");
 		Configuration.JOIN_PROBABILITY = p.getDouble("join_probability");
 		Configuration.LOOKUP_PROBABILITY = p.getDouble("lookup_probability");

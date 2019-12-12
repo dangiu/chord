@@ -282,7 +282,8 @@ public class Node {
 							this.coll.notifyLookupFailed(r.getQueryId());
 						}
 					}
-					
+				}
+				if((Helper.getCurrentTick() - r.getCreationTick()) > Configuration.STABILIZATION_TIMEOUT_THRESHOLD) {
 					//Stabilize1Request, Stabilize2Request, PingRequest
 					//tell us when a node crashed and needs to be removed
 					//from successors, fingerTable or predecessor
@@ -610,6 +611,7 @@ public class Node {
 		successors[0] = fsId;
 		//join procedure completed set flag active
 		this.active = true;
+		this.stabilize();
 	}
 	
 	private void stabilize() {
