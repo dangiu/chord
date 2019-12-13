@@ -7,6 +7,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import chord.Configuration;
+import chord.Helper;
 import repast.simphony.random.RandomHelper;
 
 /**
@@ -25,6 +26,13 @@ public class Collector {
 	private HashSet<UUID> lookupFailed;	//used to store information about lookup fail due to churn rate
 	private HashSet<UUID> lookupCompleted;	//used to store information about lookup fail due to churn rate
 	
+	private Integer joinedNode;	//stores the id of the joined process
+	private Double joinStartTick;	//stores the tick in which the process began the join
+	private Double joinEndTick;	//stores the tick in which the process completed the join
+	private HashMap<Double, HashSet<Integer>> tickKnowledgeOfJoined;	//stores the knowledge of all processes about the newly joined
+																		//process for each tick since joinStartTick
+	
+	
 	public Collector() {
 		//initialize structures needed to collect data
 		lostValuesPerRun = new TreeMap<Integer, Integer>();
@@ -33,6 +41,11 @@ public class Collector {
 		lookupInProgress = new HashSet<UUID>();
 		lookupFailed = new HashSet<UUID>();
 		lookupCompleted = new HashSet<UUID>();
+		joinedNode = null;
+		joinStartTick = null;
+		joinEndTick = null;
+		tickKnowledgeOfJoined = new HashMap<Double, HashSet<Integer>>();
+		
 	}
 	
 	public int computeLostValuesCount(Object[] arr, int percentageCrashed) {
@@ -252,5 +265,91 @@ public class Collector {
 		double failedSize = this.lookupFailed.size();
 		double totalSize = failedSize + this.lookupCompleted.size();
 		return failedSize/totalSize;
+	}
+	
+	/**
+	 * Notifies the collector about the begin of the join process of a node
+	 */
+	public void notifyJoinStart(int id) {
+		this.joinedNode = id;
+		this.joinStartTick = Helper.getCurrentTick();
+	}
+	
+	/**
+	 * Notifies the collector about the end of the join process of a node
+	 */
+	public void notifyJoinComplete(int id) {
+		if(id == this.joinedNode) {
+			this.joinEndTick = Helper.getCurrentTick();
+		}
+	}
+	
+	/**
+	 * Notifies the collector about the knowledge of the joined node by some other node
+	 */
+	public void notifyKnowledgeJoin(int callerId, int[] ss, int[] ft, int pr) {
+		//check if join process has actually began, otherwise no need to store data
+		if(this.joinedNode != null) {
+			double currTick = Helper.getCurrentTick();
+			//check if caller knows about joined node
+			boolean callerKnowsJoined = false;
+			for(int i = 0; i < ss.length; i++) {
+				if(ss[i] == this.joinedNode) {
+					callerKnowsJoined = true;
+				}
+			}
+			for(int i = 0; i < ft.length; i++) {
+				if(ft[i] == this.joinedNode) {
+					callerKnowsJoined = true;
+				}
+			}
+			if(pr == this.joinedNode)
+				callerKnowsJoined = true;
+			if(callerKnowsJoined) {
+				//add myself to the list (of the current tick) of processe that know about joined node
+				HashSet<Integer> procKnow = this.tickKnowledgeOfJoined.get(currTick);
+				if(procKnow == null) {
+					procKnow = new HashSet<Integer>();
+				}
+				procKnow.add(callerId);
+				this.tickKnowledgeOfJoined.put(currTick, procKnow);
+			}
+		}
+	}
+	
+	/**
+	 * Returns the tick in which the joining process started
+	 * @return
+	 */
+	public double getJoinStartTick() {
+		return this.joinStartTick;
+	}
+	
+	/**
+	 * Returns the tick in which the joining process ended
+	 * @return
+	 */
+	public double getJoinEndTick() {
+		return this.joinEndTick;
+	}
+
+	/**
+	 * Returns a map containing the number of processes that know about the
+	 * newly joined process, for each tick since the joining process started
+	 * @return
+	 */
+	public TreeMap<Double, Integer> getKnowledgeOfJoined() {
+		TreeMap<Double, Integer> tm = new TreeMap<Double, Integer>();
+		Iterator<Double> keyIt = this.tickKnowledgeOfJoined.keySet().iterator();
+		while(keyIt.hasNext()) {
+			Double currKey = keyIt.next();
+			HashSet<Integer> currValue = this.tickKnowledgeOfJoined.get(currKey);
+			if(currValue == null) {
+				tm.put(currKey, 0);
+			} else {
+				tm.put(currKey, currValue.size());
+			}
+		}
+		return tm;
 	}
 }
