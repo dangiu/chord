@@ -147,6 +147,13 @@ public class Node {
 				this.crash();
 			}
 			
+			/*
+			 * Analysis 6: join
+			 */
+			if(Analysis.isActive(AnalysisType.JOIN)) {
+				this.coll.notifyKnowledgeJoin(this.id, this.successors, this.fingerTable, this.predecessor);
+			}
+			
 		} else if(!this.active) {
 			//if node is inactive, but it's trying to join
 			//we need to check if our entry point has answered our query
@@ -575,6 +582,12 @@ public class Node {
 	 * @param entryPointId, entry point used to join
 	 */
 	public void join(int entryPointId) {
+		/*
+		 * Analysis 6: join
+		 */
+		if(Analysis.isActive(AnalysisType.JOIN)) {
+			this.coll.notifyJoinStart(this.id);
+		}
 		if(!this.active) {
 			//empty message queue
 			this.messageQueue.clear();
@@ -607,6 +620,12 @@ public class Node {
 	}
 	
 	private void resumeJoin(JoinRequest relatedRequest, int fsId) {
+		/*
+		 * Analysis 6: join
+		 */
+		if(Analysis.isActive(AnalysisType.JOIN)) {
+			this.coll.notifyJoinComplete(this.id);
+		}
 		this.fingerTable[0] = fsId;
 		successors[0] = fsId;
 		//join procedure completed set flag active
