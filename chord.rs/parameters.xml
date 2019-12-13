@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <parameters>
 					<parameter name="visualization_crashed_showtime" displayName="Vis 2 - Crashed Nodes Showtime" type="int" 
-						defaultValue="1000" 
+						defaultValue="50" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
@@ -67,7 +67,13 @@
 									
 		/>
 				<parameter name="visualization_timeout_showtime" displayName="Vis 1 - Timeout Showtime" type="int" 
-						defaultValue="1" 
+						defaultValue="10" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
+				<parameter name="stabilization_timeout_threshold" displayName="9B - Stabilization Timeout Threshold" type="int" 
+						defaultValue="3" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
@@ -85,7 +91,7 @@
 									
 		/>
 				<parameter name="request_timeout_threshold" displayName="9 - Request Timeout Threshold" type="int" 
-						defaultValue="20" 
+						defaultValue="50" 
 						isReadOnly="false" 
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									

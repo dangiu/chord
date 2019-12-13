@@ -6,8 +6,8 @@ package analysis;
  *
  */
 public class Analysis {
-	public enum AnalysisType {NONE, VALUES_LOST, PATH_LENGTH, CHURN_LOOKUP, JOIN};
-	public static final AnalysisType ACTIVE = AnalysisType.NONE;
+	public enum AnalysisType {NONE, VALUES_LOST, PATH_LENGTH, CHURN_LOOKUP, JOIN, LOAD_BALANCING};
+	public static final AnalysisType ACTIVE = AnalysisType.LOAD_BALANCING;
 	
 	//parameters for some specific analysis
 	public static final int CRASHED_PERCENTAGE = 50;
