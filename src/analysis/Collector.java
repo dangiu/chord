@@ -32,6 +32,8 @@ public class Collector {
 	private HashMap<Double, HashSet<Integer>> tickKnowledgeOfJoined;	//stores the knowledge of all processes about the newly joined
 																		//process for each tick since joinStartTick
 	
+	private TreeMap<Integer, Integer> countOcc; //stores information about the number of occurrences for a certain keycount
+	
 	
 	public Collector() {
 		//initialize structures needed to collect data
@@ -45,6 +47,7 @@ public class Collector {
 		joinStartTick = null;
 		joinEndTick = null;
 		tickKnowledgeOfJoined = new HashMap<Double, HashSet<Integer>>();
+		countOcc = new TreeMap<Integer, Integer>();
 		
 	}
 	
@@ -351,5 +354,55 @@ public class Collector {
 			}
 		}
 		return tm;
+	}
+	
+	/**
+	 * Computes how many key each node has to store
+	 * @param ids
+	 */
+	public int[] computeKeyCountPerNode(Object[] arr) {		
+		//create array of integers
+		int[] ids = new int[arr.length];
+		for(int i = 0; i < arr.length; i++) {
+			ids[i] = (int) arr[i];
+		}
+		
+		//create array to store count
+		int[] countPerId = new int[ids.length];
+		
+		//compute count for each node
+		for(int i = 0; i < ids.length; i++) {
+			//special cases where the id we are considering is the first in the array
+			int tempCount = 0;
+			if(i == 0) {
+				int part1 = ids[i];
+				int part2 = Configuration.MAX_NUMBER_OF_NODES - ids[ids.length - 1];
+				tempCount = part1 + part2;
+			} else {
+				tempCount = ids[i] - ids[i - 1];
+			}
+			countPerId[i] = tempCount;
+		}
+		return countPerId;
+	}
+
+	/**
+	 * Notifies the collector about the count of keys that each node must manage
+	 * @param counts
+	 */
+	public void notifyCountPerId(int[] counts) {
+		for(int i = 0; i < counts.length; i++) {
+			int currOcc = this.countOcc.getOrDefault(counts[i], 0);
+			currOcc++;
+			this.countOcc.put(counts[i], currOcc);
+		}
+	}
+	
+	/**
+	 * Returns the count of the differet occurrances of keys managed
+	 * @return
+	 */
+	public TreeMap<Integer, Integer> getCountOccurrences() {
+		return this.countOcc;
 	}
 }

@@ -86,9 +86,26 @@ public class ChordBuilder implements ContextBuilder<Object> {
 				currRun++;
 			}			
 		}
+		
 		/*
-		 * End of analysis 1
+		 * Analysis 7: load balancing
 		 */
+		if(Analysis.isActive(AnalysisType.LOAD_BALANCING)) {			
+			int currRun = 0;	
+			while(currRun < 1000) {
+				//generate ids
+				//create processes
+				TreeSet<Integer> ii = new TreeSet<Integer>();
+				while(ii.size() < Configuration.INITIAL_NUMBER_OF_NODES) {
+					int newId = RandomHelper.nextIntFromTo(0, Configuration.MAX_NUMBER_OF_NODES - 1);
+					ii.add(newId);
+				}
+				Object[] idsArr = ii.toArray();
+				int[] countPerId = coll.computeKeyCountPerNode(idsArr);
+				coll.notifyCountPerId(countPerId);
+				currRun++;
+			}			
+		}
 		
 		for(int i = 0; i < idsArray.length; i++) {
 			int currId = (int) idsArray[i]; //node id

@@ -72,6 +72,12 @@
 						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
 									
 		/>
+				<parameter name="stabilization_timeout_threshold" displayName="9B - Stabilization Timeout Threshold" type="int" 
+						defaultValue="3" 
+						isReadOnly="false" 
+						converter="repast.simphony.parameter.StringConverterFactory$IntConverter"
+									
+		/>
 				<parameter name="crash_probability" displayName="A1 - Crash Probability" type="double" 
 						defaultValue="0.001" 
 						isReadOnly="false" 
