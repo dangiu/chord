@@ -23,6 +23,12 @@ import repast.simphony.space.graph.Network;
 import visualization.ChordSpaceAdder;
 import visualization.Visualization;
 
+/**
+ * Implementation of a custom ContextBuilder from the Repast Simphony framework, used to initialize the simulation
+ * and to handle aspects regarding the supervision of the system (make node crash/join/generate lookups)
+ * @author Ohm
+ *
+ */
 public class ChordBuilder implements ContextBuilder<Object> {
 	
 	public Context<Object> context;

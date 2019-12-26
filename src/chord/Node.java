@@ -39,6 +39,11 @@ import requests.Stabilize1Request;
 import requests.Stabilize2Request;
 import visualization.Visualization;
 
+/**
+ * Main agent of the Chord protocol, implements protocol functionality
+ * @author Ohm
+ *
+ */
 public class Node {
 	private ConcurrentLinkedQueue<Message> messageQueue;
 	private HashMap<UUID, ArrayList<Request>> suspendedRequests;
@@ -56,7 +61,16 @@ public class Node {
 	//attributes for data collection
 	public Collector coll;
 	
-	
+	/**
+	 * Create a valid node that can participate in the protocol
+	 * @param id specifying position inside ID space
+	 * @param fingerTable
+	 * @param predecessor
+	 * @param successors
+	 * @param active whether process participates in the protocol, when false, the join process must be manually done
+	 * @param vis used by the process to update visualization
+	 * @param coll used by the process to send data to the collector
+	 */
 	public Node(int id, int[] fingerTable, int predecessor, int[] successors, boolean active, Visualization vis, Collector coll) {
 		this.messageQueue = new ConcurrentLinkedQueue<Message>();
 		this.suspendedRequests = new HashMap<UUID, ArrayList<Request>>();
@@ -79,14 +93,25 @@ public class Node {
 		this.coll = coll;
 	}
 	
+	/**
+	 * Returns id of the node
+	 * @return
+	 */
 	public int getId() {
 		return this.id;
 	}
 	
+	/**
+	 * Returns whether node is active or not
+	 * @return
+	 */
 	public boolean isActive() {
 		return this.active;
 	}
 	
+	/**
+	 * Single step of execution of a node, scheduled by repast simphony
+	 */
 	@ScheduledMethod(start=1 , interval=1)
 	public void step() {		
 		if(this.active) {
@@ -179,6 +204,11 @@ public class Node {
 		
 	}
 	
+	/**
+	 * Sends message to other node
+	 * @param m message to be sent
+	 * @param destination node
+	 */
 	private void send(Message m, int destination) {
 		m.setSenderId(this.id); //set the sender as myself (node id that is calling the send() method)
 		if(destination == this.id) {
@@ -259,10 +289,17 @@ public class Node {
 		return null;
 	}
 	
+	/**
+	 * Appends message to queue of the current node
+	 * @param m
+	 */
 	public void appendMessage(Message m) {
 		this.messageQueue.add(m);
 	}
 	
+	/**
+	 * Handles timed out requests, removing them and updating finger table and successors list when necessary
+	 */
 	private void cleanTimedOutRequests() {
 		Iterator<Entry<UUID, ArrayList<Request>>> it = suspendedRequests.entrySet().iterator();
 		while(it.hasNext()) {
@@ -338,12 +375,20 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Handler for the SuccessorMessage messages
+	 * @param m
+	 */
 	private void handleSuccessor(SuccessorMessage m) {
 		//get our successor and send it back to the source of the message
 		SuccessorReplyMessage reply = new SuccessorReplyMessage(m.getQueryId(), this.successors);
 		this.send(reply, m.getSender());
 	}
 	
+	/**
+	 * Handler for the SuccessorReplyMessage messages
+	 * @param m
+	 */
 	private void handleSuccessorReply(SuccessorReplyMessage m) {
 		UUID queryId = m.getQueryId();
 		//this is a reply, a request associated with it should exist
@@ -367,6 +412,10 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Handler for the PredecessorMessage messages
+	 * @param m
+	 */
 	private void handlePredecessor(PredecessorMessage m) {
 		//get our predecessor and send it back to the source of the message
 		int myPredecessor = this.predecessor;
@@ -374,6 +423,10 @@ public class Node {
 		this.send(reply, m.getSender());
 	}
 	
+	/**
+	 * Handler for the PredecessorReplyMessage messages
+	 * @param m
+	 */
 	private void handlePredecessorReply(PredecessorReplyMessage m) {
 		UUID queryId = m.getQueryId();
 		//this is a reply, a request associated with it should exist
@@ -393,6 +446,10 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Handler for the FindSuccessorMessage messages
+	 * @param m
+	 */
 	private void handleFindSuccessor(FindSuccessorMessage m) {
 		UUID queryId = m.getQueryId();
 		
@@ -417,6 +474,10 @@ public class Node {
 		this.send(fpm, this.id); //call is local, the message is sent to myself
 	}
 	
+	/**
+	 * Handler for the FindSuccessorReplyMessage messages
+	 * @param m
+	 */
 	private void handleFindSuccessorReply(FindSuccessorReplyMessage m) {
 		UUID queryId = m.getQueryId();
 		//this is a reply, a request associated with it should exist
@@ -443,6 +504,11 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Resumes execution of FindSuccessor method after predecessor has been found
+	 * @param relatedRequest
+	 * @param fpId
+	 */
 	private void resumeFindSuccessor1(FindSuccessorRequest relatedRequest, int fpId) {
 		//append request to suspendedRequests and send message to get successor of fpId (request needs to be suspended again)
 		ArrayList<Request> requests = this.suspendedRequests.get(relatedRequest.getQueryId());
@@ -454,12 +520,21 @@ public class Node {
 	}
 	
 	
+	/**
+	 * Resumes execution of FindSuccessor method after successor of predecessor has been found
+	 * @param relatedRequest
+	 * @param sId
+	 */
 	private void resumeFindSuccessor2(FindSuccessorRequest relatedRequest, int sId) {
 		//execution of find_successor() is completed, send result back to the requester
 		FindSuccessorReplyMessage reply = new FindSuccessorReplyMessage(relatedRequest.getQueryId(), sId);
 		this.send(reply, relatedRequest.getRequesterId());
 	}
 	
+	/**
+	 * Handler for the FindPredecessorMessage messages
+	 * @param m
+	 */
 	private void handleFindPredecessor(FindPredecessorMessage m) {
 		int id = m.getTargetId();
 		int nPrime = this.id;
@@ -476,6 +551,10 @@ public class Node {
 		this.send(sm, nPrime);
 	}
 	
+	/**
+	 * Handler for the FindPredecessorReplyMessage messages
+	 * @param m
+	 */
 	private void handleFindPredecessorReply(FindPredecessorReplyMessage m) {
 		UUID queryId = m.getQueryId();
 		//this is a reply, a request associated with it should exist
@@ -496,6 +575,11 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Resumes execution of FindPredecessor method after successor of n has been found
+	 * @param relatedRequest
+	 * @param nPrimeSucc
+	 */
 	private void resumeFindPredecessor1(FindPredecessorRequest relatedRequest, int nPrimeSucc) {
 		int id = relatedRequest.getId();
 		int nPrime = relatedRequest.getNPrime();
@@ -517,6 +601,11 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Resumes execution of FindPredecessor method after closest preceding finger has been found
+	 * @param relatedRequest
+	 * @param cpfId
+	 */
 	private void resumeFindPredecessor2(FindPredecessorRequest relatedRequest, int cpfId) {
 		if(relatedRequest.getNPrime() == cpfId) {
 			//special case where the node remained isolated and keeps looping forever
@@ -538,6 +627,10 @@ public class Node {
 		this.send(sm, updatedRequest.getNPrime());
 	}
 	
+	/**
+	 * Handler for the ClosestPrecedingFingerMessage messages
+	 * @param m
+	 */
 	private void handleClosestPrecedingFinger(ClosestPrecedingFingerMessage m) {
 		int cpfId = -1;
 		//get closest preceding finger and send it back to the source of the message
@@ -557,6 +650,10 @@ public class Node {
 		this.send(reply, m.getSender());
 	}
 	
+	/**
+	 * Handler for the ClosestPrecedingFingerReplyMessage messages
+	 * @param m
+	 */
 	private void handleClosestPrecedingFingerReply(ClosestPrecedingFingerReplyMessage m) {
 		UUID queryId = m.getQueryId();
 		//this is a reply, a request associated with it should exist
@@ -619,6 +716,11 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Resumes execution of Join after entry point has replied
+	 * @param relatedRequest
+	 * @param fsId
+	 */
 	private void resumeJoin(JoinRequest relatedRequest, int fsId) {
 		/*
 		 * Analysis 6: join
@@ -633,6 +735,9 @@ public class Node {
 		this.stabilize();
 	}
 	
+	/**
+	 * Stabilization procedure executed periodically
+	 */
 	private void stabilize() {
 		//check if our predecessor is still alive if we have one
 		//if he replies ok, otherwise we will timeout and set it to -1
@@ -686,6 +791,11 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Resumes execution of stabilization procedure after predecessor of current successor has been found
+	 * @param relatedRequest
+	 * @param pId
+	 */
 	private void resumeStabilize1(Stabilize1Request relatedRequest, int pId) {
 		//pseudocode of stabilize() but suspend execution before notify in order to ask for successors list
 		if(Helper.belongs(pId, this.id, false, this.successors[0], false)) {
@@ -707,6 +817,11 @@ public class Node {
 		this.send(sm, this.successors[0]);
 	}
 	
+	/**
+	 * Resumes execution of stabilization procedure after successor has replied with successors lists
+	 * @param relatedRequest
+	 * @param pId
+	 */
 	private void resumeStabilize2(Stabilize2Request relatedRequest, int[] sSuccessors) {
 		//second part of the stabilize() procedure, update successors list and send notify to successor[0]
 		//update successors list based on sSuccessors
@@ -728,6 +843,10 @@ public class Node {
 		this.send(nm, successors[0]);
 	}
 	
+	/**
+	 * Handler for the NotifyMessage messages
+	 * @param m
+	 */
 	private void handleNotify(NotifyMessage m) {
 		int nPrime = m.getId();
 		if(this.predecessor == -1 || Helper.belongs(nPrime, this.predecessor, false, this.id, false)) {
@@ -737,7 +856,7 @@ public class Node {
 	}
 	
 	/**
-	 * As done in the paper, this method will attempt to fix all fingers in a single call
+	 * Fix finger procedure, as in the paper, this method will attempt to fix all fingers in a single call
 	 */
 	private void fixFingers() {
 		for(int i = 0; i < this.fingerTable.length; i++) {
@@ -754,16 +873,29 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Resume execution of fix finger after findSuccessor has completed
+	 * @param relatedRequest
+	 * @param fsId
+	 */
 	private void resumeFixFingers(FixFingerRequest relatedRequest, int fsId) {
 		int fingerIndex = relatedRequest.getFingerIndex();
 		this.fingerTable[fingerIndex] = fsId;
 	}
 	
+	/**
+	 * Handler for the PingMessage messages
+	 * @param m
+	 */
 	private void handlePing(PingMessage m) {
 		PingReplyMessage reply = new PingReplyMessage(m.getQueryId());
 		this.send(reply, m.getSender());
 	}
 	
+	/**
+	 * Handler for the PingReplyMessage messages
+	 * @param m
+	 */
 	private void handlePingReply(PingReplyMessage m) {
 		//remove entry from suspendedRequest, pinged node is still alive
 		this.suspendedRequests.remove(m.getQueryId());
@@ -842,7 +974,7 @@ public class Node {
 	}
 	
 	/**
-	 * Wrapper methods, tell the current node to performa a lookup for a random id
+	 * Wrapper methods, tell the current node to perform a a lookup for a random id
 	 */
 	public void lookup() {
 		//generate random key
@@ -851,6 +983,11 @@ public class Node {
 		this.lookup(key);
 	}
 	
+	/**
+	 * Resume execution of lookup, this method is called once the lookup has been completed and the result obtained
+	 * @param relatedRequest
+	 * @param fsId
+	 */
 	public void resumeLookup(LookupRequest relatedRequest, int fsId) {
 		//fsId is the id of the node that holds the key we are looking for (first successor of key)
 		//update visualization
@@ -867,6 +1004,10 @@ public class Node {
 		}
 	}
 	
+	/**
+	 * Returns an array representing the clone of the successors list
+	 * @return
+	 */
 	public int[] getSuccs() {
 		return this.successors.clone();
 	}
